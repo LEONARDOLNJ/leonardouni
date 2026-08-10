@@ -1,4 +1,6 @@
 import { LanguageProvider } from "@/lib/i18n";
+import { ThemeProvider } from "@/lib/theme";
+import { AuthProvider } from "@/lib/auth";
 import { RouterProvider, useRouter } from "@/lib/router";
 import { UniStoreProvider } from "@/lib/uni-store";
 import { Dashboard } from "@/pages/Dashboard";
@@ -8,10 +10,18 @@ import { Pagamentos } from "@/pages/Pagamentos";
 import { Recibos } from "@/pages/Recibos";
 import { Documentos } from "@/pages/Documentos";
 import { OrientadorPage } from "@/pages/Orientador";
+import { Login } from "@/pages/Login";
+import { StudentPortal } from "@/pages/StudentPortal";
 
 function AppRoutes() {
   const { path } = useRouter();
 
+  if (path === "/login") {
+    return <Login />;
+  }
+  if (path === "/portal") {
+    return <StudentPortal />;
+  }
   if (path === "/orientador") {
     return <OrientadorPage />;
   }
@@ -36,12 +46,16 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <UniStoreProvider>
-        <RouterProvider>
-          <AppRoutes />
-        </RouterProvider>
-      </UniStoreProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <UniStoreProvider>
+            <RouterProvider>
+              <AppRoutes />
+            </RouterProvider>
+          </UniStoreProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }

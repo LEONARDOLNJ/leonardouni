@@ -1,7 +1,11 @@
 import React from "react";
 import { Link } from "@/lib/router";
 import { UNIVERSITY } from "@/lib/uni-data";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Lang } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
+import { useAuth } from "@/lib/auth";
+import { UniversityLogo } from "@/components/UniversityLogo";
+import { Sun, Moon, User, LogIn, LogOut, Globe, GraduationCap } from "lucide-react";
 import heroDefault from "@/assets/campus-hero.jpg";
 
 const NAV = [
@@ -26,43 +30,98 @@ export function Shell({
   children: React.ReactNode;
 }) {
   const { t, lang, setLang } = useI18n();
+  const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground transition-colors">
       <div className="bg-primary text-primary-foreground">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-2 text-xs">
-          <div className="flex flex-wrap gap-4 opacity-85">
-            <span>{t("Portal do estudante")}</span>
+          <div className="flex flex-wrap items-center gap-4 opacity-85">
+            <Link to="/portal" className="hover:underline flex items-center gap-1">
+              <GraduationCap className="size-3.5" />
+              <span>{t("Portal do Estudante")}</span>
+            </Link>
             <span>{t("Apoio financeiro")}</span>
             <span>{t("Contactos")}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="mr-1 opacity-70">{t("Idioma")}:</span>
-            {(["pt", "en"] as const).map((l) => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                aria-pressed={lang === l}
-                className={`rounded-sm px-2 py-0.5 uppercase transition ${
-                  lang === l
-                    ? "bg-primary-foreground font-semibold text-primary"
-                    : "opacity-70 hover:opacity-100"
-                }`}
+
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-1 rounded-sm bg-primary-foreground/10 px-2 py-0.5 hover:bg-primary-foreground/20 transition text-xs"
+              title={theme === "dark" ? t("Modo Claro") : t("Modo Escuro")}
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun className="size-3.5 text-amber-300" />
+                  <span className="text-[11px] font-medium">{t("Claro")}</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="size-3.5 text-blue-200" />
+                  <span className="text-[11px] font-medium">{t("Escuro")}</span>
+                </>
+              )}
+            </button>
+
+            {/* Language Selector */}
+            <div className="flex items-center gap-1">
+              <Globe className="size-3.5 opacity-70 mr-0.5" />
+              {(["pt", "en", "fr", "es"] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l as Lang)}
+                  aria-pressed={lang === l}
+                  className={`rounded-sm px-1.5 py-0.5 uppercase text-[11px] transition ${
+                    lang === l
+                      ? "bg-primary-foreground font-semibold text-primary"
+                      : "opacity-75 hover:opacity-100"
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {/* Auth Profile / Login */}
+            {user ? (
+              <div className="flex items-center gap-2 border-l border-primary-foreground/20 pl-3">
+                <Link
+                  to="/portal"
+                  className="flex items-center gap-1.5 rounded-sm bg-primary-foreground/10 px-2 py-0.5 hover:bg-primary-foreground/20 transition text-xs font-semibold"
+                >
+                  <User className="size-3.5" />
+                  <span className="truncate max-w-[110px]">{user.nome.split(" ")[0]}</span>
+                </Link>
+                <button
+                  onClick={logout}
+                  title={t("Sair")}
+                  className="opacity-70 hover:opacity-100 transition p-0.5"
+                >
+                  <LogOut className="size-3.5 text-red-300" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-1 border-l border-primary-foreground/20 pl-3 font-semibold hover:underline"
               >
-                {l}
-              </button>
-            ))}
+                <LogIn className="size-3.5" />
+                <span>{t("Login")}</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <Link to="/" className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center bg-primary font-display text-lg font-bold text-primary-foreground">
-              {UNIVERSITY.sigla.slice(0, 2)}
-            </span>
+          <Link to="/" className="group flex items-center gap-3">
+            <UniversityLogo size="md" />
             <div>
-              <p className="font-display text-base leading-tight font-bold text-primary">
+              <p className="font-display text-base leading-tight font-bold text-primary group-hover:text-accent transition">
                 {t(UNIVERSITY.nome)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -82,6 +141,13 @@ export function Shell({
                 {t(n.label)}
               </Link>
             ))}
+            <Link
+              to="/login"
+              className="border-b-2 border-transparent px-3 py-2 text-primary font-semibold transition hover:border-accent"
+              activeClassName="border-accent text-primary font-bold"
+            >
+              {t("Portal do Estudante")}
+            </Link>
           </nav>
         </div>
       </header>

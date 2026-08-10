@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { AddStudentModal } from "@/components/AddStudentModal";
 import { StudentProfileModal } from "@/components/StudentProfileModal";
 import studentsImg from "@/assets/students.jpg";
-import { UserPlus, Search, Eye, CreditCard, Shield, Mail } from "lucide-react";
+import { UserPlus, Search, Eye, CreditCard, Shield, Mail, Globe } from "lucide-react";
 
 export function Estudantes() {
   const { t } = useI18n();
@@ -15,45 +15,82 @@ export function Estudantes() {
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "national" | "international" | "debt">("all");
 
   const filteredStudents = students.filter((s) => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       s.nome.toLowerCase().includes(q) ||
       s.id.toLowerCase().includes(q) ||
       s.docId.toLowerCase().includes(q) ||
       s.email.toLowerCase().includes(q) ||
-      s.curso.toLowerCase().includes(q)
-    );
+      s.curso.toLowerCase().includes(q) ||
+      (s.nacionalidade && s.nacionalidade.toLowerCase().includes(q));
+
+    if (!matchesSearch) return false;
+
+    if (categoryFilter === "national") return !s.isInternational;
+    if (categoryFilter === "international") return !!s.isInternational;
+    if (categoryFilter === "debt") {
+      const stats = getStudentStats(s.id);
+      return stats.totalOutstanding > 0;
+    }
+
+    return true;
   });
 
   return (
     <Shell
       titulo="Registo de Estudantes"
-      descricao="Gestão do cadastro académico, consulta de documento de identificação/NUIT, histórico de pagamentos e liquidação de propinas."
+      descricao="Gestão do cadastro académico de estudantes nacionais e internacionais, consulta de documento de identificação/passaporte e histórico de liquidações."
       imagem={studentsImg}
     >
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        {/* Search Field */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("Pesquisar por Nº de estudante, Nome, Doc. ID / NUIT, Email...")}
-            className="w-full rounded-sm border border-input bg-card pl-9 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Search Field */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("Pesquisar por Nº de estudante, Nome, Passaporte / NUIT, Nacionalidade...")}
+              className="w-full rounded-sm border border-input bg-card pl-9 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          {/* Add Student Button */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 shrink-0"
+          >
+            <UserPlus className="size-4" />
+            <span>{t("Adicionar Estudante")}</span>
+          </button>
         </div>
 
-        {/* Add Student Button */}
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 shrink-0"
-        >
-          <UserPlus className="size-4" />
-          <span>{t("Adicionar Estudante")}</span>
-        </button>
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground font-medium mr-1">{t("Filtrar por")}:</span>
+          {[
+            { id: "all", label: "Todos os Estudantes" },
+            { id: "national", label: "Nacionais" },
+            { id: "international", label: "Internacionais" },
+            { id: "debt", label: "Com Saldo Pendente" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setCategoryFilter(tab.id as any)}
+              className={`rounded-xs px-3 py-1 font-semibold transition ${
+                categoryFilter === tab.id
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+              }`}
+            >
+              {t(tab.label)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <Panel
@@ -70,9 +107,9 @@ export function Estudantes() {
               <tr className="border-b border-border text-left text-xs tracking-wider text-muted-foreground uppercase">
                 <th className="px-5 py-2.5 font-medium">{t("Nº de estudante")}</th>
                 <th className="px-5 py-2.5 font-medium">{t("Nome")}</th>
-                <th className="px-5 py-2.5 font-medium">{t("Doc. ID / NUIT")}</th>
+                <th className="px-5 py-2.5 font-medium">{t("Doc. ID / Passaporte")}</th>
                 <th className="px-5 py-2.5 font-medium">{t("Curso / Ano")}</th>
-                <th className="px-5 py-2.5 font-medium">{t("Email")}</th>
+                <th className="px-5 py-2.5 font-medium">{t("Email & Origem")}</th>
                 <th className="px-5 py-2.5 text-right font-medium">{t("Em dívida")}</th>
                 <th className="px-5 py-2.5 text-right font-medium">{t("Acção")}</th>
               </tr>
@@ -98,7 +135,17 @@ export function Estudantes() {
                       <td className="px-5 py-3 font-mono text-xs font-bold text-foreground">
                         {s.id}
                       </td>
-                      <td className="px-5 py-3 font-semibold text-foreground">{s.nome}</td>
+                      <td className="px-5 py-3 font-semibold text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <span>{s.nome}</span>
+                          {s.isInternational && (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-1.5 py-0.2 text-[10px] font-semibold">
+                              <Globe className="size-3" />
+                              INT
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-5 py-3 font-mono text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <Shield className="size-3 text-muted-foreground/60" />
@@ -109,10 +156,17 @@ export function Estudantes() {
                         {t(s.curso)} · {s.ano}º
                       </td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">
-                        <span className="inline-flex items-center gap-1">
-                          <Mail className="size-3 text-muted-foreground/60" />
-                          <span>{s.email}</span>
-                        </span>
+                        <div className="space-y-0.5">
+                          <span className="inline-flex items-center gap-1">
+                            <Mail className="size-3 text-muted-foreground/60" />
+                            <span>{s.email}</span>
+                          </span>
+                          {s.nacionalidade && (
+                            <p className="text-[11px] text-muted-foreground font-medium">
+                              {s.nacionalidade}
+                            </p>
+                          )}
+                        </div>
                       </td>
                       <td
                         className={`px-5 py-3 text-right font-bold ${

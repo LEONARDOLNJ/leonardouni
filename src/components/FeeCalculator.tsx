@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { CURSOS, mzn } from "@/lib/uni-data";
+import { CURSOS, mzn, formatCurrency } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
-import { Calculator, Sparkles, Check, Download, ShieldCheck, DollarSign, Calendar, Award } from "lucide-react";
+import { Calculator, Sparkles, Check, Download, ShieldCheck, DollarSign, Calendar, Award, Globe } from "lucide-react";
 
 export function FeeCalculator() {
   const { t } = useI18n();
 
   const [curso, setCurso] = useState(CURSOS[0]);
-  const [baseFee, setBaseFee] = useState(37000); // 37,000 MZN standard base annual
+  const [currency, setCurrency] = useState<"MZN" | "USD" | "EUR">("MZN");
   const [planOption, setPlanOption] = useState<"annual" | "semester" | "monthly">("semester");
   const [bolsa, setBolsa] = useState<number>(0); // 0%, 20%, 30%, 50%, 100%
   const [irmaoDiscount, setIrmaoDiscount] = useState<boolean>(false); // 15% discount
@@ -57,8 +57,30 @@ export function FeeCalculator() {
             {t("Calculadora de Propinas, Descontos & Mensalidades")}
           </h2>
           <p className="text-xs text-muted-foreground">
-            {t("Calcule poupanças com pagamentos anuais, descontos para irmãos e aplicação de bolsas de estudo Leonardo University.")}
+            {t("Calcule poupanças com pagamentos anuais, descontos para irmãos e conversão para estudantes internacionais.")}
           </p>
+        </div>
+
+        {/* Currency Switcher */}
+        <div className="flex items-center gap-1.5 rounded-sm border border-border bg-muted/40 p-1 text-xs">
+          <span className="px-1.5 font-semibold text-muted-foreground flex items-center gap-1">
+            <Globe className="size-3.5" />
+            {t("Moeda")}:
+          </span>
+          {(["MZN", "USD", "EUR"] as const).map((curr) => (
+            <button
+              key={curr}
+              type="button"
+              onClick={() => setCurrency(curr)}
+              className={`rounded-xs px-2 py-1 font-bold text-xs transition ${
+                currency === curr
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {curr}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -76,7 +98,7 @@ export function FeeCalculator() {
             >
               {CURSOS.map((c) => (
                 <option key={c} value={c}>
-                  {t(c)} — {mzn(getCourseBasePrice(c))}/{t("ano")}
+                  {t(c)} — {formatCurrency(getCourseBasePrice(c), currency)}/{t("ano")}
                 </option>
               ))}
             </select>
@@ -172,19 +194,19 @@ export function FeeCalculator() {
                 {t("Resumo do Plano Financeiro")}
               </span>
               <span className="text-xs font-mono font-bold bg-success/15 text-success px-2 py-0.5 rounded-sm">
-                {t("Poupança Total")}: {mzn(totalDiscountValue)}
+                {t("Poupança Total")}: {formatCurrency(totalDiscountValue, currency)}
               </span>
             </div>
 
             <div className="space-y-3">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{t("Propina Anual Base (Tabela)")}:</span>
-                <span className="font-mono text-foreground">{mzn(currentBasePrice)}</span>
+                <span className="font-mono text-foreground">{formatCurrency(currentBasePrice, currency)}</span>
               </div>
 
               <div className="flex justify-between text-xs text-success font-medium">
                 <span>{t("Desconto Total Acumulado")} ({Math.round(totalDiscountRate * 100)}%):</span>
-                <span className="font-mono">- {mzn(totalDiscountValue)}</span>
+                <span className="font-mono">- {formatCurrency(totalDiscountValue, currency)}</span>
               </div>
 
               <div className="border-t border-border pt-2 flex justify-between items-baseline">
@@ -192,7 +214,7 @@ export function FeeCalculator() {
                   {t("Propina Anual Final Liquidável")}:
                 </span>
                 <span className="font-display text-2xl font-bold text-primary">
-                  {mzn(finalAnnualPrice)}
+                  {formatCurrency(finalAnnualPrice, currency)}
                 </span>
               </div>
             </div>
@@ -207,7 +229,7 @@ export function FeeCalculator() {
                   <span>
                     {numInstallments} {numInstallments === 1 ? t("Prestação Única") : t("Prestações")}
                   </span>
-                  <span className="text-primary font-bold">{mzn(installmentValue)} / {t("parcela")}</span>
+                  <span className="text-primary font-bold">{formatCurrency(installmentValue, currency)} / {t("parcela")}</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
                   {planOption === "annual" && t("Liquidação até 28 de Fevereiro com emissão de recibo único.")}
@@ -220,7 +242,7 @@ export function FeeCalculator() {
 
           <div className="pt-2 text-right">
             <span className="text-[11px] text-muted-foreground block">
-              * {t("Simulação válida para o ano lectivo de 2026 segundo os estatutos da Leonardo University.")}
+              * {t("Simulação válida para estudantes nacionais e internacionais (ano lectivo 2026).")}
             </span>
           </div>
         </div>
@@ -228,3 +250,4 @@ export function FeeCalculator() {
     </div>
   );
 }
+

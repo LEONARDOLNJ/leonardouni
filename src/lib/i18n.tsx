@@ -1,24 +1,35 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-export type Lang = "pt" | "en";
+export type Lang = "pt" | "en" | "fr" | "es";
 
 /** Portuguese source string -> English translation. */
 const EN: Record<string, string> = {
   // navigation / chrome
   "Painel": "Dashboard",
+  "Orientador IA": "AI Advisor",
   "Estudantes": "Students",
   "Propinas & Taxas": "Tuition & Fees",
   "Pagamentos": "Payments",
   "Recibos": "Receipts",
   "Documentos": "Documents",
+  "Login": "Login",
+  "Portal do Estudante": "Student Portal",
+  "Sair": "Logout",
+  "Entrar": "Sign In",
+  "Esqueceu a Senha?": "Forgot Password?",
+  "Recuperar Conta": "Recover Account",
   "Sistema de Gestão · Módulo Financeiro": "Management System · Finance Module",
-  "Universidade Politécnica de Maputo": "Maputo Polytechnic University",
+  "Leonardo University": "Leonardo University",
   "Portal do estudante": "Student portal",
   "Apoio financeiro": "Financial support",
   "Contactos": "Contact us",
   "Idioma": "Language",
-  "Português": "Portuguese",
-  "Inglês": "English",
+  "Modo Escuro": "Dark Mode",
+  "Modo Claro": "Light Mode",
+  "Estudante Internacional": "International Student",
+  "Estudantes Internacionais": "International Students",
+  "Nacionalidade": "Nationality",
+  "Passaporte / Visto": "Passport / Visa",
   "Candidaturas abertas para o ano lectivo 2026": "Applications open for the 2026 academic year",
   "Saiba mais": "Find out more",
   "Ligações rápidas": "Quick links",
@@ -56,7 +67,7 @@ const EN: Record<string, string> = {
   "Gestão transparente de propinas, taxas e recibos — tudo num só portal.":
     "Transparent management of tuition, fees and receipts — all in one portal.",
 
-  // students
+  // students & login
   "Registo académico e situação financeira de cada estudante matriculado.":
     "Academic record and financial position of every enrolled student.",
   "estudantes matriculados": "enrolled students",
@@ -65,6 +76,14 @@ const EN: Record<string, string> = {
   "Curso": "Programme",
   "Ano": "Year",
   "Email": "Email",
+  "Senha": "Password",
+  "Introduza o seu email ou N.º de estudante": "Enter your email or Student ID",
+  "Introduza a sua senha": "Enter your password",
+  "Entrar no Portal do Estudante": "Sign into Student Portal",
+  "Acesso de Teste Rápido (Demonstração)": "Quick Test Access (Demo)",
+  "Instruções para Recuperação de Senha": "Password Recovery Instructions",
+  "Enviar Link de Recuperação": "Send Recovery Link",
+  "Um email de redefinição de senha foi enviado para": "A password reset email was sent to",
 
   // fees
   "Configuração dos encargos lectivos: propinas por semestre e taxas administrativas adicionais.":
@@ -101,24 +120,6 @@ const EN: Record<string, string> = {
   "recibos emitidos": "receipts issued",
   "Descarregar PDF": "Download PDF",
 
-  // documents
-  "Plano do sistema e modelos institucionais de papel timbrado, gerados em PDF no navegador.":
-    "System plan and institutional letterhead templates, generated as PDF in your browser.",
-  "Plano do sistema": "System plan",
-  "Papel timbrado": "Letterhead",
-  "Documento de três páginas com âmbito funcional dos módulos (Pagamentos, Propinas, Taxas, Estado dos pagamentos, Recibos), modelo de dados, fluxos de utilização, faseamento de implementação e um anexo com a configuração actual de encargos e estudantes.":
-    "A three-page document covering the functional scope of each module (Payments, Tuition, Fees, Payment status, Receipts), the data model, user flows, implementation phases and an appendix with the current charge and student configuration.",
-  "Descarregar plano em PDF": "Download plan as PDF",
-  "Papel timbrado · Uso geral": "Letterhead · General use",
-  "Cabeçalho institucional, referência, data e zona de assinatura.":
-    "Institutional header, reference, date and signature area.",
-  "Papel timbrado · Direcção de Finanças": "Letterhead · Finance Directorate",
-  "Modelo de notificação de propinas e taxas em dívida.":
-    "Template for notifying outstanding tuition and fees.",
-  "Papel timbrado · Declaração de quitação": "Letterhead · Clearance statement",
-  "Declaração de situação financeira regularizada.":
-    "Statement confirming a settled financial position.",
-
   // courses
   "Engenharia Informática": "Computer Engineering",
   "Gestão de Empresas": "Business Management",
@@ -137,6 +138,278 @@ const EN: Record<string, string> = {
   "Taxa de Certificação de Documentos": "Document certification fee",
 };
 
+/** Portuguese source string -> French translation. */
+const FR: Record<string, string> = {
+  // navigation / chrome
+  "Painel": "Tableau de bord",
+  "Orientador IA": "Conseiller IA",
+  "Estudantes": "Étudiants",
+  "Propinas & Taxas": "Frais de scolarité",
+  "Pagamentos": "Paiements",
+  "Recibos": "Reçus",
+  "Documentos": "Documents",
+  "Login": "Connexion",
+  "Portal do Estudante": "Portail Étudiant",
+  "Sair": "Déconnexion",
+  "Entrar": "Se connecter",
+  "Esqueceu a Senha?": "Mot de passe oublié ?",
+  "Recuperar Conta": "Récupérer le compte",
+  "Sistema de Gestão · Módulo Financeiro": "Système de Gestion · Module Financier",
+  "Leonardo University": "Leonardo University",
+  "Portal do estudante": "Portail étudiant",
+  "Apoio financeiro": "Aide financière",
+  "Contactos": "Contactez-nous",
+  "Idioma": "Langue",
+  "Modo Escuro": "Mode Sombre",
+  "Modo Claro": "Mode Clair",
+  "Estudante Internacional": "Étudiant International",
+  "Estudantes Internacionais": "Étudiants Internationaux",
+  "Nacionalidade": "Nationalité",
+  "Passaporte / Visto": "Passeport / Visa",
+  "Candidaturas abertas para o ano lectivo 2026": "Candidatures ouvertes pour l'année académique 2026",
+  "Saiba mais": "En savoir plus",
+  "Ligações rápidas": "Liens rapides",
+  "Todos os direitos reservados.": "Tous droits réservés.",
+
+  // dashboard
+  "Painel de Pagamentos": "Tableau de bord des paiements",
+  "Visão consolidada de propinas, taxas e estado de cobrança do ano lectivo corrente.":
+    "Vue consolidée des frais de scolarité et de l'état de recouvrement pour l'année académique.",
+  "Total facturado": "Total facturé",
+  "Recebido": "Reçu",
+  "Pendente": "En attente",
+  "Vencido": "En retard",
+  "encargos lançados": "frais émis",
+  "da facturação": "de la facturation",
+  "aguarda liquidação": "en attente de règlement",
+  "requer notificação": "nécessite une notification",
+  "Taxa de cobrança": "Taux de recouvrement",
+  "Saldos por regularizar": "Soldes à régulariser",
+  "Ver todos os pagamentos": "Voir tous les paiements",
+  "Estudante": "Étudiant",
+  "Encargo": "Frais",
+  "Vencimento": "Date d'échéance",
+  "Em dívida": "En dette",
+  "Estado": "Statut",
+  "Cobrança por curso": "Recouvrement par programme",
+  "O plano do sistema e os modelos de papel timbrado estão disponíveis para descarga em PDF.":
+    "Le plan du système et les modèles d'en-tête sont disponibles en téléchargement PDF.",
+  "Abrir documentos": "Ouvrir les documents",
+  "Vida no campus": "Vie de campus",
+  "Apoio ao estudante": "Soutien aux étudiants",
+  "Serviços financeiros": "Services financiers",
+  "Uma universidade construída à volta dos seus estudantes.":
+    "Une université conçue autour de ses étudiants.",
+  "Gestão transparente de propinas, taxas e recibos — tudo num só portal.":
+    "Gestion transparente des frais de scolarité, des reçus — le tout sur un seul portail.",
+
+  // students & login
+  "Registo académico e situação financeira de cada estudante matriculado.":
+    "Dossier académique et situation financière de chaque étudiant inscrit.",
+  "estudantes matriculados": "étudiants inscrits",
+  "Nº de estudante": "N° d'étudiant",
+  "Nome": "Nom",
+  "Curso": "Programme",
+  "Ano": "Année",
+  "Email": "E-mail",
+  "Senha": "Mot de passe",
+  "Introduza o seu email ou N.º de estudante": "Entrez votre e-mail ou N° d'étudiant",
+  "Introduza a sua senha": "Entrez votre mot de passe",
+  "Entrar no Portal do Estudante": "Connexion au Portail Étudiant",
+  "Acesso de Teste Rápido (Demonstração)": "Accès de Test Rapide (Démonstration)",
+  "Instruções para Recuperação de Senha": "Instructions de récupération du mot de passe",
+  "Enviar Link de Recuperação": "Envoyer le lien de réinitialisation",
+  "Um email de redefinição de senha foi enviado para": "Un e-mail de réinitialisation a été envoyé à",
+
+  // fees
+  "Configuração dos encargos lectivos: propinas por semestre e taxas administrativas adicionais.":
+    "Configuration des frais académiques : frais de scolarité semestriels et frais administratifs.",
+  "Propinas": "Frais de scolarité",
+  "Taxas": "Frais annexes",
+  "registos": "enregistrements",
+  "Código": "Code",
+  "Designação": "Désignation",
+  "Abrangência": "Concerne",
+  "Valor": "Montant",
+
+  // payments
+  "Estado dos Pagamentos": "Statut des paiements",
+  "Registo de todas as transacções, método de pagamento e saldo remanescente por encargo.":
+    "Registre de toutes les transactions, mode de paiement et solde restant dû.",
+  "todos": "tous",
+  "pago": "payé",
+  "pendente": "en attente",
+  "vencido": "en retard",
+  "transacções": "transactions",
+  "Referência": "Référence",
+  "Data": "Date",
+  "Método": "Méthode",
+  "Pago": "Payé",
+  "Recibo": "Reçu",
+  "Cartão": "Carte bancaire",
+  "Mobile Money": "Paiement Mobile",
+  "Transferência Bancária": "Virement Bancaire",
+
+  // receipts
+  "Comprovativos emitidos automaticamente após a liquidação de uma propina ou taxa.":
+    "Preuves de paiement émises automatiquement après le règlement.",
+  "recibos emitidos": "reçus émis",
+  "Descarregar PDF": "Télécharger le PDF",
+
+  // courses
+  "Engenharia Informática": "Génie Informatique",
+  "Gestão de Empresas": "Gestion des Entreprises",
+  "Direito": "Droit",
+  "Medicina": "Médecine",
+  "Arquitectura": "Architecture",
+  "Todos": "Tous",
+
+  // fee designations
+  "Propina · 1º Semestre": "Scolarité · 1er Semestre",
+  "Propina · 2º Semestre": "Scolarité · 2ème Semestre",
+  "Propina Clínica (acréscimo)": "Frais de clinique (supplément)",
+  "Taxa de Inscrição Anual": "Frais d'inscription annuelle",
+  "Taxa de Biblioteca": "Frais de bibliothèque",
+  "Taxa de Laboratório": "Frais de laboratoire",
+  "Taxa de Certificação de Documentos": "Frais de certification de documents",
+};
+
+/** Portuguese source string -> Spanish translation. */
+const ES: Record<string, string> = {
+  // navigation / chrome
+  "Painel": "Panel de Control",
+  "Orientador IA": "Asesor IA",
+  "Estudantes": "Estudiantes",
+  "Propinas & Taxas": "Colegiaturas y Tasas",
+  "Pagamentos": "Pagos",
+  "Recibos": "Recibos",
+  "Documentos": "Documentos",
+  "Login": "Iniciar Sesión",
+  "Portal do Estudante": "Portal del Estudiante",
+  "Sair": "Cerrar Sesión",
+  "Entrar": "Ingresar",
+  "Esqueceu a Senha?": "¿Olvidó su contraseña?",
+  "Recuperar Conta": "Recuperar Cuenta",
+  "Sistema de Gestão · Módulo Financeiro": "Sistema de Gestión · Módulo Financiero",
+  "Leonardo University": "Leonardo University",
+  "Portal do estudante": "Portal del estudiante",
+  "Apoio financeiro": "Apoyo financiero",
+  "Contactos": "Contactos",
+  "Idioma": "Idioma",
+  "Modo Escuro": "Modo Oscuro",
+  "Modo Claro": "Modo Claro",
+  "Estudante Internacional": "Estudiante Internacional",
+  "Estudantes Internacionais": "Estudiantes Internacionales",
+  "Nacionalidade": "Nacionalidad",
+  "Passaporte / Visto": "Pasaporte / Visa",
+  "Candidaturas abertas para o ano lectivo 2026": "Solicitudes abiertas para el año académico 2026",
+  "Saiba mais": "Más información",
+  "Ligações rápidas": "Enlaces rápidos",
+  "Todos os direitos reservados.": "Todos los derechos reservados.",
+
+  // dashboard
+  "Painel de Pagamentos": "Panel de Pagos",
+  "Visão consolidada de propinas, taxas e estado de cobrança do ano lectivo corrente.":
+    "Visión consolidada de colegiaturas, tasas y estado de cobro del año académico.",
+  "Total facturado": "Total facturado",
+  "Recebido": "Recibido",
+  "Pendente": "Pendiente",
+  "Vencido": "Vencido",
+  "encargos lançados": "cargos emitidos",
+  "da facturação": "de la facturación",
+  "aguarda liquidação": "espera liquidación",
+  "requer notificação": "requiere notificación",
+  "Taxa de cobrança": "Tasa de cobro",
+  "Saldos por regularizar": "Saldos por regularizar",
+  "Ver todos os pagamentos": "Ver todos los pagos",
+  "Estudante": "Estudiante",
+  "Encargo": "Cargo",
+  "Vencimento": "Fecha de vencimiento",
+  "Em dívida": "En deuda",
+  "Estado": "Estado",
+  "Cobrança por curso": "Cobro por programa",
+  "O plano do sistema e os modelos de papel timbrado estão disponíveis para descarga em PDF.":
+    "El plan del sistema y los modelos de membrete están disponibles para descarga en PDF.",
+  "Abrir documentos": "Abrir documentos",
+  "Vida no campus": "Vida en el campus",
+  "Apoio ao estudante": "Apoyo al estudiante",
+  "Serviços financeiros": "Servicios financieros",
+  "Uma universidade construída à volta dos seus estudantes.":
+    "Una universidad diseñada para sus estudiantes.",
+  "Gestão transparente de propinas, taxas e recibos — tudo num só portal.":
+    "Gestión transparente de colegiaturas, tasas y recibos — todo en un solo portal.",
+
+  // students & login
+  "Registo académico e situação financeira de cada estudante matriculado.":
+    "Registro académico y posición financiera de cada estudiante matriculado.",
+  "estudantes matriculados": "estudiantes matriculados",
+  "Nº de estudante": "N.º de estudiante",
+  "Nome": "Nombre",
+  "Curso": "Programa",
+  "Ano": "Año",
+  "Email": "Correo electrónico",
+  "Senha": "Contraseña",
+  "Introduza o seu email ou N.º de estudante": "Ingrese su correo o N.º de estudiante",
+  "Introduza a sua senha": "Ingrese su contraseña",
+  "Entrar no Portal do Estudante": "Ingresar al Portal del Estudiante",
+  "Acesso de Teste Rápido (Demonstração)": "Acceso de Prueba Rápida (Demostración)",
+  "Instruções para Recuperação de Senha": "Instrucciones de Recuperación de Contraseña",
+  "Enviar Link de Recuperação": "Enviar Enlace de Recuperación",
+  "Um email de redefinição de senha foi enviado para": "Un correo de restablecimiento fue enviado a",
+
+  // fees
+  "Configuração dos encargos lectivos: propinas por semestre e taxas administrativas adicionais.":
+    "Configuración de cargos académicos: colegiaturas por semestre y tasas administrativas.",
+  "Propinas": "Colegiaturas",
+  "Taxas": "Tasas",
+  "registos": "registros",
+  "Código": "Código",
+  "Designação": "Descripción",
+  "Abrangência": "Aplica a",
+  "Valor": "Monto",
+
+  // payments
+  "Estado dos Pagamentos": "Estado de Pagos",
+  "Registo de todas as transacções, método de pagamento e saldo remanescente por encargo.":
+    "Registro de cada transacción, método de pago y saldo restante por cargo.",
+  "todos": "todos",
+  "pago": "pagado",
+  "pendente": "pendiente",
+  "vencido": "vencido",
+  "transacções": "transacciones",
+  "Referência": "Referencia",
+  "Data": "Fecha",
+  "Método": "Método",
+  "Pago": "Pagado",
+  "Recibo": "Recibo",
+  "Cartão": "Tarjeta bancaria",
+  "Mobile Money": "Pago Móvil",
+  "Transferência Bancária": "Transferencia Bancaria",
+
+  // receipts
+  "Comprovativos emitidos automaticamente após a liquidação de uma propina ou taxa.":
+    "Comprobantes emitidos automáticamente tras la liquidación del cargo.",
+  "recibos emitidos": "recibos emitidos",
+  "Descarregar PDF": "Descargar PDF",
+
+  // courses
+  "Engenharia Informática": "Ingeniería Informática",
+  "Gestão de Empresas": "Gestión de Empresas",
+  "Direito": "Derecho",
+  "Medicina": "Medicina",
+  "Arquitectura": "Arquitectura",
+  "Todos": "Todos",
+
+  // fee designations
+  "Propina · 1º Semestre": "Colegiatura · 1.er Semestre",
+  "Propina · 2º Semestre": "Colegiatura · 2.º Semestre",
+  "Propina Clínica (acréscimo)": "Colegiatura clínica (suplemento)",
+  "Taxa de Inscrição Anual": "Tasa de inscripción anual",
+  "Taxa de Biblioteca": "Tasa de biblioteca",
+  "Taxa de Laboratório": "Tasa de laboratorio",
+  "Taxa de Certificação de Documentos": "Tasa de certificación de documentos",
+};
+
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (pt: string) => string };
 
 const LangContext = createContext<Ctx>({ lang: "pt", setLang: () => {}, t: (s) => s });
@@ -145,8 +418,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("pt");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("upm-lang");
-    if (saved === "en" || saved === "pt") setLangState(saved);
+    const saved = window.localStorage.getItem("ul-lang") as Lang | null;
+    if (saved === "en" || saved === "pt" || saved === "fr" || saved === "es") {
+      setLangState(saved);
+    }
   }, []);
 
   const value = useMemo<Ctx>(
@@ -154,9 +429,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       lang,
       setLang: (l) => {
         setLangState(l);
-        window.localStorage.setItem("upm-lang", l);
+        window.localStorage.setItem("ul-lang", l);
       },
-      t: (pt) => (lang === "en" ? (EN[pt] ?? pt) : pt),
+      t: (pt) => {
+        if (lang === "en") return EN[pt] ?? pt;
+        if (lang === "fr") return FR[pt] ?? pt;
+        if (lang === "es") return ES[pt] ?? pt;
+        return pt;
+      },
     }),
     [lang],
   );
