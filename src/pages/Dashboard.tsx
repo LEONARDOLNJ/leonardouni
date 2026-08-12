@@ -4,9 +4,9 @@ import { useUniStore } from "@/lib/uni-store";
 import { dataPt, mzn, type Payment, type Fee, type Student } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
 import { AcademicCalendar } from "@/components/AcademicCalendar";
-import studentsImg from "@/assets/students.jpg";
-import financeImg from "@/assets/finance.jpg";
-import graduationImg from "@/assets/graduation.jpg";
+import campusLifeImg from "@/assets/images/campus_life_1786439382297.jpg";
+import financeServicesImg from "@/assets/images/financial_services_1786439400478.jpg";
+import studentSupportImg from "@/assets/images/student_support_1786439415676.jpg";
 
 export function Dashboard() {
   const { t: tr } = useI18n();
@@ -36,9 +36,9 @@ export function Dashboard() {
   ];
 
   const destaques = [
-    { img: studentsImg, titulo: "Vida no campus", texto: "Uma universidade construída à volta dos seus estudantes." },
-    { img: financeImg, titulo: "Serviços financeiros", texto: "Gestão transparente de propinas, taxas e recibos — tudo num só portal." },
-    { img: graduationImg, titulo: "Apoio ao estudante", texto: "Candidaturas abertas para o ano lectivo 2026" },
+    { img: campusLifeImg, titulo: "Vida no campus", texto: "Uma universidade construída à volta dos seus estudantes." },
+    { img: financeServicesImg, titulo: "Serviços financeiros", texto: "Gestão transparente de propinas, taxas e recibos — tudo num só portal." },
+    { img: studentSupportImg, titulo: "Apoio ao estudante", texto: "Candidaturas abertas para o ano lectivo 2026" },
   ];
 
   return (

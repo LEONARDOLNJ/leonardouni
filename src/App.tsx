@@ -1,6 +1,9 @@
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
+import { Web3Provider } from "@/lib/web3-base";
+import { SubscriptionProvider } from "@/lib/subscription-store";
+import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { RouterProvider, useRouter } from "@/lib/router";
 import { UniStoreProvider } from "@/lib/uni-store";
 import { Dashboard } from "@/pages/Dashboard";
@@ -10,6 +13,7 @@ import { Pagamentos } from "@/pages/Pagamentos";
 import { Recibos } from "@/pages/Recibos";
 import { Documentos } from "@/pages/Documentos";
 import { OrientadorPage } from "@/pages/Orientador";
+import { Subscricoes } from "@/pages/Subscricoes";
 import { Login } from "@/pages/Login";
 import { StudentPortal } from "@/pages/StudentPortal";
 
@@ -24,6 +28,9 @@ function AppRoutes() {
   }
   if (path === "/orientador") {
     return <OrientadorPage />;
+  }
+  if (path === "/subscricoes") {
+    return <Subscricoes />;
   }
   if (path === "/estudantes") {
     return <Estudantes />;
@@ -49,11 +56,16 @@ export default function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <UniStoreProvider>
-            <RouterProvider>
-              <AppRoutes />
-            </RouterProvider>
-          </UniStoreProvider>
+          <Web3Provider>
+            <SubscriptionProvider>
+              <UniStoreProvider>
+                <RouterProvider>
+                  <AppRoutes />
+                  <SubscriptionModal />
+                </RouterProvider>
+              </UniStoreProvider>
+            </SubscriptionProvider>
+          </Web3Provider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

@@ -1,6 +1,6 @@
 export type FeeKind = "propina" | "taxa";
 export type PaymentStatus = "pago" | "pendente" | "vencido";
-export type Method = "Cartão" | "Mobile Money" | "Transferência Bancária";
+export type Method = "Cartão" | "Mobile Money" | "Transferência Bancária" | "Base Pay (USDC)";
 
 export interface Student {
   id: string;
@@ -12,6 +12,7 @@ export interface Student {
   email: string;
   nacionalidade?: string;
   isInternational?: boolean;
+  foto?: string;
 }
 
 export interface Fee {
@@ -53,13 +54,13 @@ export const CURSOS = [
 ];
 
 export const students: Student[] = [
-  { id: "EST-2024-001", nome: "Leonardo Matsinhe", docId: "110100452930B", tipoDocumento: "BI", curso: "Engenharia Informática", ano: 3, email: "leonardo.m@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false },
-  { id: "EST-2024-002", nome: "Ana Cristina Mabjaia", docId: "110200384910C", tipoDocumento: "BI", curso: "Gestão de Empresas", ano: 2, email: "ana.mabjaia@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false },
-  { id: "EST-2024-003", nome: "Jorge Nhamirre", docId: "110300918230D", tipoDocumento: "BI", curso: "Direito", ano: 4, email: "jorge.n@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false },
-  { id: "EST-2024-004", nome: "Fátima Sitoe", docId: "110400561280E", tipoDocumento: "BI", curso: "Medicina", ano: 1, email: "fatima.sitoe@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false },
-  { id: "EST-2024-005", nome: "Rui Bila", docId: "110500129840F", tipoDocumento: "BI", curso: "Arquitectura", ano: 5, email: "rui.bila@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false },
-  { id: "EST-2024-006", nome: "Jean-Luc Dubois", docId: "FR-9920184710", tipoDocumento: "Passaporte", curso: "Engenharia Informática", ano: 2, email: "jeanluc.dubois@ul.ac.mz", nacionalidade: "França (França)", isInternational: true },
-  { id: "EST-2024-007", nome: "Maria Sofia Garcia", docId: "ES-482019385", tipoDocumento: "Passaporte", curso: "Gestão de Empresas", ano: 1, email: "maria.garcia@ul.ac.mz", nacionalidade: "Espanha (Espanha)", isInternational: true },
+  { id: "EST-2024-001", nome: "Leonardo Matsinhe", docId: "110100452930B", tipoDocumento: "BI", curso: "Engenharia Informática", ano: 3, email: "leonardo.m@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false, foto: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80" },
+  { id: "EST-2024-002", nome: "Ana Cristina Mabjaia", docId: "110200384910C", tipoDocumento: "BI", curso: "Gestão de Empresas", ano: 2, email: "ana.mabjaia@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false, foto: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80" },
+  { id: "EST-2024-003", nome: "Jorge Nhamirre", docId: "110300918230D", tipoDocumento: "BI", curso: "Direito", ano: 4, email: "jorge.n@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false, foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80" },
+  { id: "EST-2024-004", nome: "Fátima Sitoe", docId: "110400561280E", tipoDocumento: "BI", curso: "Medicina", ano: 1, email: "fatima.sitoe@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false, foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80" },
+  { id: "EST-2024-005", nome: "Rui Bila", docId: "110500129840F", tipoDocumento: "BI", curso: "Arquitectura", ano: 5, email: "rui.bila@ul.ac.mz", nacionalidade: "Moçambique", isInternational: false, foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80" },
+  { id: "EST-2024-006", nome: "Jean-Luc Dubois", docId: "FR-9920184710", tipoDocumento: "Passaporte", curso: "Engenharia Informática", ano: 2, email: "jeanluc.dubois@ul.ac.mz", nacionalidade: "França (França)", isInternational: true, foto: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80" },
+  { id: "EST-2024-007", nome: "Maria Sofia Garcia", docId: "ES-482019385", tipoDocumento: "Passaporte", curso: "Gestão de Empresas", ano: 1, email: "maria.garcia@ul.ac.mz", nacionalidade: "Espanha (Espanha)", isInternational: true, foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80" },
 ];
 
 export const fees: Fee[] = [

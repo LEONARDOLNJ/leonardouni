@@ -5,12 +5,16 @@ import { useI18n, type Lang } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
 import { UniversityLogo } from "@/components/UniversityLogo";
+import { Web3AuthButtons } from "@/components/Web3AuthButtons";
+import { SignInWithBaseButton } from "@/components/SignInWithBaseButton";
+import { AIVoiceAssistant } from "@/components/AIVoiceAssistant";
 import { Sun, Moon, User, LogIn, LogOut, Globe, GraduationCap } from "lucide-react";
 import heroDefault from "@/assets/campus-hero.jpg";
 
 const NAV = [
   { to: "/", label: "Painel" },
   { to: "/orientador", label: "Orientador IA" },
+  { to: "/subscricoes", label: "Subscrições" },
   { to: "/estudantes", label: "Estudantes" },
   { to: "/propinas", label: "Propinas & Taxas" },
   { to: "/pagamentos", label: "Pagamentos" },
@@ -85,38 +89,49 @@ export function Shell({
               ))}
             </div>
 
-            {/* Auth Profile / Login */}
-            {user ? (
-              <div className="flex items-center gap-2 border-l border-primary-foreground/20 pl-3">
+            {/* AI Voice Command Assistant */}
+            <AIVoiceAssistant variant="header" />
+
+            {/* Auth Profile / Login & Sign in with Base */}
+            <div className="flex items-center gap-2 border-l border-primary-foreground/20 pl-2 sm:pl-3">
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/portal"
+                    className="flex items-center gap-1.5 rounded-sm bg-primary-foreground/10 px-2 py-0.5 hover:bg-primary-foreground/20 transition text-xs font-semibold"
+                  >
+                    <User className="size-3.5" />
+                    <span className="truncate max-w-[110px]">{user.nome.split(" ")[0]}</span>
+                  </Link>
+                  <button
+                    onClick={logout}
+                    title={t("Sair")}
+                    className="opacity-70 hover:opacity-100 transition p-0.5"
+                  >
+                    <LogOut className="size-3.5 text-red-300" />
+                  </button>
+                </div>
+              ) : (
                 <Link
-                  to="/portal"
-                  className="flex items-center gap-1.5 rounded-sm bg-primary-foreground/10 px-2 py-0.5 hover:bg-primary-foreground/20 transition text-xs font-semibold"
+                  to="/login"
+                  className="flex items-center gap-1 font-semibold hover:underline mr-1"
                 >
-                  <User className="size-3.5" />
-                  <span className="truncate max-w-[110px]">{user.nome.split(" ")[0]}</span>
+                  <LogIn className="size-3.5" />
+                  <span>{t("Login")}</span>
                 </Link>
-                <button
-                  onClick={logout}
-                  title={t("Sair")}
-                  className="opacity-70 hover:opacity-100 transition p-0.5"
-                >
-                  <LogOut className="size-3.5 text-red-300" />
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-1 border-l border-primary-foreground/20 pl-3 font-semibold hover:underline"
-              >
-                <LogIn className="size-3.5" />
-                <span>{t("Login")}</span>
-              </Link>
-            )}
+              )}
+
+              {/* Sign in with Base Button - ALWAYS VISIBLE RIGHT NEXT TO LOGIN / PROFILE */}
+              <SignInWithBaseButton variant="header" />
+            </div>
+
+            {/* Base Pay Prompts & MetaMask Web3 Status */}
+            <Web3AuthButtons showBaseButton={false} />
           </div>
         </div>
       </div>
 
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border bg-card shadow-xs">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
           <Link to="/" className="group flex items-center gap-3">
             <UniversityLogo size="md" />
@@ -129,13 +144,13 @@ export function Shell({
               </p>
             </div>
           </Link>
-          <nav className="flex flex-wrap gap-1 text-sm font-medium">
+          <nav className="flex flex-wrap items-center gap-1 sm:gap-2 text-sm font-medium">
             {NAV.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
                 exact={n.to === "/"}
-                className="border-b-2 border-transparent px-3 py-2 text-foreground/75 transition hover:border-accent hover:text-primary"
+                className="border-b-2 border-transparent px-2.5 py-2 text-foreground/75 transition hover:border-accent hover:text-primary"
                 activeClassName="border-accent text-primary font-semibold"
               >
                 {t(n.label)}
@@ -143,11 +158,16 @@ export function Shell({
             ))}
             <Link
               to="/login"
-              className="border-b-2 border-transparent px-3 py-2 text-primary font-semibold transition hover:border-accent"
+              className="border-b-2 border-transparent px-2.5 py-2 text-primary font-semibold transition hover:border-accent"
               activeClassName="border-accent text-primary font-bold"
             >
               {t("Portal do Estudante")}
             </Link>
+
+            {/* Sign in with Base Button in Main Header Nav */}
+            <div className="ml-1 sm:ml-2 shrink-0">
+              <SignInWithBaseButton variant="header" />
+            </div>
           </nav>
         </div>
       </header>

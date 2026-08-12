@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useRouter } from "@/lib/router";
+import { useWeb3 } from "@/lib/web3-base";
 import { Shell, Panel, StatusBadge } from "@/components/Shell";
 import { MobileMoneyRefModal } from "@/components/MobileMoneyRefModal";
 import { StudentCardModal } from "@/components/StudentCardModal";
@@ -44,6 +45,7 @@ export function StudentPortal() {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   const { navigate } = useRouter();
+  const { address, walletType, balanceUsdc, networkName, signInWithBase } = useWeb3();
   const { getStudentPayments, getStudentOutstandingInvoices, getStudentStats } = useUniStore();
 
   const [selectedCurrency, setSelectedCurrency] = useState<"MZN" | "USD" | "EUR">("MZN");
@@ -110,8 +112,17 @@ export function StudentPortal() {
         <div className="rounded-sm border border-border bg-card p-6 shadow-xs space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex size-14 items-center justify-center rounded-full bg-primary font-display font-bold text-2xl text-primary-foreground shadow-xs">
-                {user.nome.charAt(0)}
+              <div className="relative flex size-14 items-center justify-center rounded-full bg-primary font-display font-bold text-2xl text-primary-foreground shadow-xs overflow-hidden border border-border">
+                {user.foto ? (
+                  <img
+                    src={user.foto}
+                    alt={user.nome}
+                    referrerPolicy="no-referrer"
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  user.nome.charAt(0)
+                )}
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -126,6 +137,13 @@ export function StudentPortal() {
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
                       {t("Estudante Nacional")}
+                    </span>
+                  )}
+
+                  {address && walletType === "base" && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#0052FF]/10 border border-[#0052FF]/30 px-2.5 py-0.5 text-xs font-extrabold text-[#0052FF] dark:text-blue-400">
+                      <ShieldCheck className="size-3.5 text-emerald-500 fill-emerald-100 dark:fill-emerald-950" />
+                      <span>Autenticado com Base Account</span>
                     </span>
                   )}
                 </div>
@@ -185,6 +203,56 @@ export function StudentPortal() {
                 <LogOut className="size-3.5" />
                 <span>{t("Sair")}</span>
               </button>
+            </div>
+          </div>
+
+          {/* Base Blockchain & Base Pay Integration Card */}
+          <div className="rounded-sm border border-blue-500/30 bg-blue-950/15 p-4 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30">
+                <Globe className="size-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400">
+                    Base Blockchain & Base Pay
+                  </h3>
+                  <a
+                    href="https://docs.base.org/get-started/base"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-blue-300 hover:underline flex items-center gap-0.5"
+                  >
+                    <span>docs.base.org</span>
+                    <Sparkles className="size-2.5" />
+                  </a>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {address
+                    ? `Conectado via ${walletType === "base" ? "Base Account" : "Ethereum Wallet"}: ${address.slice(0, 6)}...${address.slice(-4)}`
+                    : "Pague propinas em dólar digital (USDC) sem taxas através da rede Base (L2 de Ethereum)."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {address ? (
+                <div className="text-right">
+                  <span className="text-[10px] text-muted-foreground uppercase block font-semibold">
+                    Saldo USDC (Base)
+                  </span>
+                  <span className="font-mono text-sm font-bold text-blue-400">
+                    ${balanceUsdc} USDC
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => signInWithBase()}
+                  className="rounded-sm bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 text-xs font-bold transition shadow-xs"
+                >
+                  Conectar Base Account
+                </button>
+              )}
             </div>
           </div>
 

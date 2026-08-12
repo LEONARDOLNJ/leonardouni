@@ -5,7 +5,7 @@ import { mzn, type Student } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
 import { AddStudentModal } from "@/components/AddStudentModal";
 import { StudentProfileModal } from "@/components/StudentProfileModal";
-import studentsImg from "@/assets/students.jpg";
+import studentsImg from "@/assets/images/campus_life_1786439382297.jpg";
 import { UserPlus, Search, Eye, CreditCard, Shield, Mail, Globe } from "lucide-react";
 
 export function Estudantes() {
@@ -136,14 +136,30 @@ export function Estudantes() {
                         {s.id}
                       </td>
                       <td className="px-5 py-3 font-semibold text-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <span>{s.nome}</span>
-                          {s.isInternational && (
-                            <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-1.5 py-0.2 text-[10px] font-semibold">
-                              <Globe className="size-3" />
-                              INT
-                            </span>
-                          )}
+                        <div className="flex items-center gap-2.5">
+                          <div className="size-8 rounded-full overflow-hidden bg-primary/10 border border-border shrink-0 flex items-center justify-center font-bold text-xs text-primary">
+                            {s.foto ? (
+                              <img
+                                src={s.foto}
+                                alt={s.nome}
+                                referrerPolicy="no-referrer"
+                                className="size-full object-cover"
+                              />
+                            ) : (
+                              s.nome.slice(0, 2).toUpperCase()
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span>{s.nome}</span>
+                              {s.isInternational && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-1.5 py-0.2 text-[10px] font-semibold">
+                                  <Globe className="size-3" />
+                                  INT
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-5 py-3 font-mono text-xs text-muted-foreground">

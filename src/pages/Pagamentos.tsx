@@ -6,8 +6,9 @@ import { dataPt, mzn, type PaymentStatus, type Payment, type Fee, type Student }
 import { useI18n } from "@/lib/i18n";
 import { PayInvoiceModal } from "@/components/PayInvoiceModal";
 import { SmsNotificationModal } from "@/components/SmsNotificationModal";
-import financeImg from "@/assets/finance.jpg";
-import { DollarSign, Download, CreditCard, Bell } from "lucide-react";
+import { PaymentCredentialsModal } from "@/components/PaymentCredentialsModal";
+import financeImg from "@/assets/images/financial_services_1786439400478.jpg";
+import { DollarSign, Download, CreditCard, Bell, Key } from "lucide-react";
 
 const FILTROS = ["todos", "pago", "pendente", "vencido"] as const;
 
@@ -16,6 +17,7 @@ export function Pagamentos() {
   const { payments, students, fees } = useUniStore();
 
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number]>("todos");
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
   const [selectedPayTarget, setSelectedPayTarget] = useState<{
     student: Student;
     fee: Fee;
@@ -64,13 +66,23 @@ export function Pagamentos() {
           ))}
         </div>
 
-        <button
-          onClick={() => handleOpenSms()}
-          className="inline-flex items-center gap-2 rounded-sm bg-accent/20 border border-accent/40 px-3.5 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/30 transition"
-        >
-          <Bell className="size-3.5" />
-          <span>{t("Disparar Lembrete SMS / M-Pesa")}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCredentialsModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-sm bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition cursor-pointer"
+          >
+            <Key className="size-3.5" />
+            <span>Configurar M-Pesa & Cartões Moçambique</span>
+          </button>
+
+          <button
+            onClick={() => handleOpenSms()}
+            className="inline-flex items-center gap-2 rounded-sm bg-accent/20 border border-accent/40 px-3.5 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/30 transition cursor-pointer"
+          >
+            <Bell className="size-3.5" />
+            <span>{t("Disparar Lembrete SMS / M-Pesa")}</span>
+          </button>
+        </div>
       </div>
 
       <Panel titulo={`${lista.length} ${t("transacções registadas")}`}>
@@ -157,6 +169,11 @@ export function Pagamentos() {
           dueAmount={selectedPayTarget.dueAmount}
           onClose={() => setSelectedPayTarget(null)}
         />
+      )}
+
+      {/* Embedded Credentials Guide Modal */}
+      {showCredentialsModal && (
+        <PaymentCredentialsModal onClose={() => setShowCredentialsModal(false)} />
       )}
 
       {/* Embedded SMS Modal if triggered */}

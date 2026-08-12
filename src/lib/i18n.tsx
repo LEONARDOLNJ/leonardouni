@@ -12,6 +12,8 @@ const EN: Record<string, string> = {
   "Pagamentos": "Payments",
   "Recibos": "Receipts",
   "Documentos": "Documents",
+  "Subscrições": "Subscriptions",
+  "Subscrições Base Pay": "Base Pay Subscriptions",
   "Login": "Login",
   "Portal do Estudante": "Student Portal",
   "Sair": "Logout",
@@ -26,6 +28,8 @@ const EN: Record<string, string> = {
   "Idioma": "Language",
   "Modo Escuro": "Dark Mode",
   "Modo Claro": "Light Mode",
+  "Claro": "Light",
+  "Escuro": "Dark",
   "Estudante Internacional": "International Student",
   "Estudantes Internacionais": "International Students",
   "Nacionalidade": "Nationality",
@@ -34,6 +38,86 @@ const EN: Record<string, string> = {
   "Saiba mais": "Find out more",
   "Ligações rápidas": "Quick links",
   "Todos os direitos reservados.": "All rights reserved.",
+
+  // Voice AI
+  "Voz IA": "AI Voice",
+  "Comando de Voz IA": "AI Voice Command",
+  "Ativar Voz IA": "Enable AI Voice",
+  "Desativar Voz IA": "Disable AI Voice",
+  "A ouvir... Fale agora": "Listening... Speak now",
+  "A processar comando...": "Processing command...",
+  "A responder...": "Responding...",
+  "Diga um comando (ex: 'Ir para pagamentos', 'Ver propinas', 'Modo escuro')": "Say a command (e.g. 'Go to payments', 'View tuition', 'Dark mode')",
+  "Comandos disponíveis": "Available commands",
+  "Ir para o Painel": "Go to Dashboard",
+  "Abrir Orientador IA": "Open AI Advisor",
+  "Ver Propinas": "View Tuition",
+  "Ver Pagamentos": "View Payments",
+  "Mudar para Inglês": "Switch to English",
+  "Ativar Modo Escuro": "Enable Dark Mode",
+  "Repetir Resposta": "Repeat Response",
+  "Parar Voz": "Stop Voice",
+  "Fale para navegar, mudar definições ou fazer perguntas sobre a Universidade.": "Speak to navigate, change settings or ask questions about the University.",
+  "Clique no microfone para falar": "Click the microphone to speak",
+  "A navegar para o Painel...": "Navigating to Dashboard...",
+  "A abrir o Orientador IA...": "Opening AI Advisor...",
+  "A abrir Propinas e Taxas...": "Opening Tuition & Fees...",
+  "A abrir estado de Pagamentos...": "Opening Payment status...",
+  "A abrir lista de Estudantes...": "Opening Student list...",
+  "A abrir Recibos emitidos...": "Opening issued Receipts...",
+  "A abrir Documentos...": "Opening Documents...",
+  "A abrir Subscrições...": "Opening Subscriptions...",
+  "A abrir Portal do Estudante...": "Opening Student Portal...",
+  "Modo Escuro activado.": "Dark Mode enabled.",
+  "Modo Claro activado.": "Light Mode enabled.",
+  "Voz processada sem resposta.": "Voice processed without response.",
+  "Erro ao enviar o áudio de voz.": "Error sending voice audio.",
+  "Não consegui compreender o comando.": "Could not understand command.",
+  "Erro ao consultar a IA por voz.": "Error querying AI by voice.",
+
+  // AI Advisor & Choice Simulator
+  "Orientador IA do Estudante · Leonardo University": "AI Student Advisor · Leonardo University",
+  "Guia de Escolhas & Orientação Financeira Inteligente": "Choices Guide & Smart Financial Counseling",
+  "Insira o seu curso, ano lectivo e preferências financeiras para receber recomendações personalizadas, estimativa de encargos, alertas de prazo e estratégias de pagamento.": "Enter your course, academic year, and financial preferences to receive personalized recommendations, charge estimates, deadline alerts, and payment strategies.",
+  "Fechar Assistente IA": "Close AI Assistant",
+  "Conversar com Orientador IA": "Chat with AI Advisor",
+  "Consultas / Prompts IA restantes neste ciclo": "Remaining AI Prompts / Queries in this cycle",
+  "Subscrever / Recarregar com Base Pay": "Subscribe / Recharge with Base Pay",
+  "Configure as suas Escolhas": "Configure Your Choices",
+  "Curso Académico": "Academic Programme",
+  "Ano de Estudo": "Year of Study",
+  "Método de Pagamento": "Payment Method",
+  "Preferência / Situação Financeira": "Preference / Financial Situation",
+  "Pagamento parcelado por semestre (18.500 MZN/semestre)": "Semester installment payment (18,500 MZN/semester)",
+  "Pagamento integral anual único": "Single full annual payment",
+  "Pedido de extensão de prazo / Necessidade de apoio": "Deadline extension request / Financial support needed",
+  "Ajuste para Propinas + Taxas específicas do curso": "Adjustment for Tuition + Course-specific fees",
+  "Dúvida ou Nota Adicional (Opcional)": "Additional Question or Note (Optional)",
+  "A analisar opções com IA...": "Analyzing options with AI...",
+  "Gerar Orientação Personalizada IA": "Generate Personalized AI Guidance",
+  "Plano & Orientação Recomendada": "Recommended Plan & Guidance",
+  "A processar e estruturar o plano financeiro na Leonardo University...": "Processing and structuring financial plan at Leonardo University...",
+  "Analisando prazos de propinas, taxas do curso e melhores formas de liquidação.": "Analyzing tuition deadlines, course fees and best settlement methods.",
+  "Nenhum plano gerado ainda": "No plan generated yet",
+  "Seleccione o seu curso e preferências à esquerda e clique em 'Gerar Orientação Personalizada IA' para receber um plano financeiro detalhado.": "Select your program and preferences on the left and click 'Generate Personalized AI Guidance' to receive a detailed financial plan.",
+  "Custos Precisos": "Accurate Costs",
+  "Propinas e taxas por curso": "Tuition and fees per course",
+  "Prazos Alertas": "Deadline Alerts",
+  "Evite multas de mora": "Avoid late fee penalties",
+  "Métodos Locais": "Local Methods",
+  "M-Pesa, e-Mola, Bancos": "M-Pesa, e-Mola, Banks",
+  "Conversa em Tempo Real com Orientador IA": "Real-time Chat with AI Advisor",
+  "Fechar": "Close",
+  "Dúvidas frequentes": "Frequently asked questions",
+  "O Orientador IA está a escrever...": "AI Advisor is writing...",
+  "Enviar": "Send",
+  "Planos de Subscrição IA do Estudante": "Student AI Subscription Tiers",
+  "Pague via Cartão ou Dólar Digital (USDC) em Base Sepolia ou Base Mainnet. Rentabilidade garantida para sustentabilidade da IA.": "Pay via Card or Digital Dollar (USDC) on Base Sepolia or Base Mainnet. Guaranteed sustainability for AI operations.",
+  "Abrir Modal do Base Pay": "Open Base Pay Modal",
+  "Recomendado": "Recommended",
+  "Prompts IA": "AI Prompts",
+  "mês": "month",
+  "Subscrever por": "Subscribe for",
 
   // dashboard
   "Painel de Pagamentos": "Payments Dashboard",
@@ -85,7 +169,7 @@ const EN: Record<string, string> = {
   "Enviar Link de Recuperação": "Send Recovery Link",
   "Um email de redefinição de senha foi enviado para": "A password reset email was sent to",
 
-  // fees
+  // fees & payments
   "Configuração dos encargos lectivos: propinas por semestre e taxas administrativas adicionais.":
     "Configuration of academic charges: tuition per semester and additional administrative fees.",
   "Propinas": "Tuition",
@@ -95,8 +179,6 @@ const EN: Record<string, string> = {
   "Designação": "Description",
   "Abrangência": "Applies to",
   "Valor": "Amount",
-
-  // payments
   "Estado dos Pagamentos": "Payment Status",
   "Registo de todas as transacções, método de pagamento e saldo remanescente por encargo.":
     "A record of every transaction, payment method and remaining balance per charge.",
@@ -113,8 +195,15 @@ const EN: Record<string, string> = {
   "Cartão": "Card",
   "Mobile Money": "Mobile Money",
   "Transferência Bancária": "Bank Transfer",
+  "Disparar Lembrete SMS / M-Pesa": "Trigger SMS / M-Pesa Reminder",
+  "Configurar M-Pesa & Cartões Moçambique": "Configure M-Pesa & Mozambique Cards",
+  "Pagar Factura": "Pay Invoice",
+  "Simular Taxas": "Calculate Fees",
+  "Solicitar Bolsa": "Apply for Scholarship",
+  "Cartão de Estudante": "Student ID Card",
+  "Emitir Recibo": "Issue Receipt",
 
-  // receipts
+  // receipts & docs
   "Comprovativos emitidos automaticamente após a liquidação de uma propina ou taxa.":
     "Proof of payment issued automatically once a tuition charge or fee is settled.",
   "recibos emitidos": "receipts issued",
@@ -148,6 +237,8 @@ const FR: Record<string, string> = {
   "Pagamentos": "Paiements",
   "Recibos": "Reçus",
   "Documentos": "Documents",
+  "Subscrições": "Abonnements",
+  "Subscrições Base Pay": "Abonnements Base Pay",
   "Login": "Connexion",
   "Portal do Estudante": "Portail Étudiant",
   "Sair": "Déconnexion",
@@ -162,6 +253,8 @@ const FR: Record<string, string> = {
   "Idioma": "Langue",
   "Modo Escuro": "Mode Sombre",
   "Modo Claro": "Mode Clair",
+  "Claro": "Clair",
+  "Escuro": "Sombre",
   "Estudante Internacional": "Étudiant International",
   "Estudantes Internacionais": "Étudiants Internationaux",
   "Nacionalidade": "Nationalité",
@@ -170,6 +263,25 @@ const FR: Record<string, string> = {
   "Saiba mais": "En savoir plus",
   "Ligações rápidas": "Liens rapides",
   "Todos os direitos reservados.": "Tous droits réservés.",
+
+  // Voice AI
+  "Voz IA": "Voix IA",
+  "Comando de Voz IA": "Commande Vocale IA",
+  "Ativar Voz IA": "Activer la voix IA",
+  "Desativar Voz IA": "Désactiver la voix IA",
+  "A ouvir... Fale agora": "À l'écoute... Parlez maintenant",
+  "A processar comando...": "Traitement de la commande...",
+  "A responder...": "En réponse...",
+  "Diga um comando (ex: 'Ir para pagamentos', 'Ver propinas', 'Modo escuro')": "Dites une commande (ex: 'Aller aux paiements', 'Voir les frais')",
+  "Comandos disponíveis": "Commandes disponibles",
+  "Ir para o Painel": "Aller au Tableau de bord",
+  "Abrir Orientador IA": "Ouvrir le Conseiller IA",
+  "Ver Propinas": "Voir les Frais de scolarité",
+  "Ver Pagamentos": "Voir les Paiements",
+  "Mudar para Inglês": "Passer à l'Anglais",
+  "Ativar Modo Escuro": "Activer le Mode Sombre",
+  "Repetir Resposta": "Répéter la réponse",
+  "Parar Voz": "Arrêter la voix",
 
   // dashboard
   "Painel de Pagamentos": "Tableau de bord des paiements",
@@ -221,7 +333,7 @@ const FR: Record<string, string> = {
   "Enviar Link de Recuperação": "Envoyer le lien de réinitialisation",
   "Um email de redefinição de senha foi enviado para": "Un e-mail de réinitialisation a été envoyé à",
 
-  // fees
+  // fees & payments
   "Configuração dos encargos lectivos: propinas por semestre e taxas administrativas adicionais.":
     "Configuration des frais académiques : frais de scolarité semestriels et frais administratifs.",
   "Propinas": "Frais de scolarité",
@@ -231,8 +343,6 @@ const FR: Record<string, string> = {
   "Designação": "Désignation",
   "Abrangência": "Concerne",
   "Valor": "Montant",
-
-  // payments
   "Estado dos Pagamentos": "Statut des paiements",
   "Registo de todas as transacções, método de pagamento e saldo remanescente por encargo.":
     "Registre de toutes les transactions, mode de paiement et solde restant dû.",
@@ -249,8 +359,15 @@ const FR: Record<string, string> = {
   "Cartão": "Carte bancaire",
   "Mobile Money": "Paiement Mobile",
   "Transferência Bancária": "Virement Bancaire",
+  "Disparar Lembrete SMS / M-Pesa": "Rappel SMS / M-Pesa",
+  "Configurar M-Pesa & Cartões Moçambique": "Configurer M-Pesa & Cartes",
+  "Pagar Factura": "Payer la facture",
+  "Simular Taxas": "Calculer les frais",
+  "Solicitar Bolsa": "Demander une bourse",
+  "Cartão de Estudante": "Carte d'étudiant",
+  "Emitir Recibo": "Émettre un reçu",
 
-  // receipts
+  // receipts & docs
   "Comprovativos emitidos automaticamente após a liquidação de uma propina ou taxa.":
     "Preuves de paiement émises automatiquement après le règlement.",
   "recibos emitidos": "reçus émis",
@@ -284,6 +401,8 @@ const ES: Record<string, string> = {
   "Pagamentos": "Pagos",
   "Recibos": "Recibos",
   "Documentos": "Documentos",
+  "Subscrições": "Suscripciones",
+  "Subscrições Base Pay": "Suscripciones Base Pay",
   "Login": "Iniciar Sesión",
   "Portal do Estudante": "Portal del Estudiante",
   "Sair": "Cerrar Sesión",
@@ -298,6 +417,8 @@ const ES: Record<string, string> = {
   "Idioma": "Idioma",
   "Modo Escuro": "Modo Oscuro",
   "Modo Claro": "Modo Claro",
+  "Claro": "Claro",
+  "Escuro": "Oscuro",
   "Estudante Internacional": "Estudiante Internacional",
   "Estudantes Internacionais": "Estudiantes Internacionales",
   "Nacionalidade": "Nacionalidad",
@@ -306,6 +427,25 @@ const ES: Record<string, string> = {
   "Saiba mais": "Más información",
   "Ligações rápidas": "Enlaces rápidos",
   "Todos os direitos reservados.": "Todos los derechos reservados.",
+
+  // Voice AI
+  "Voz IA": "Voz IA",
+  "Comando de Voz IA": "Comando de Voz IA",
+  "Ativar Voz IA": "Activar Voz IA",
+  "Desativar Voz IA": "Desactivar Voz IA",
+  "A ouvir... Fale agora": "Escuchando... Hable ahora",
+  "A processar comando...": "Procesando comando...",
+  "A responder...": "Respondiendo...",
+  "Diga um comando (ex: 'Ir para pagamentos', 'Ver propinas', 'Modo escuro')": "Diga un comando (ej: 'Ir a pagos', 'Ver colegiaturas')",
+  "Comandos disponíveis": "Comandos disponibles",
+  "Ir para o Painel": "Ir al Panel de Control",
+  "Abrir Orientador IA": "Abrir Asesor IA",
+  "Ver Propinas": "Ver Colegiaturas",
+  "Ver Pagamentos": "Ver Pagos",
+  "Mudar para Inglês": "Cambiar a Inglés",
+  "Ativar Modo Escuro": "Activar Modo Oscuro",
+  "Repetir Resposta": "Repetir Respuesta",
+  "Parar Voz": "Detener Voz",
 
   // dashboard
   "Painel de Pagamentos": "Panel de Pagos",
@@ -357,7 +497,7 @@ const ES: Record<string, string> = {
   "Enviar Link de Recuperação": "Enviar Enlace de Recuperación",
   "Um email de redefinição de senha foi enviado para": "Un correo de restablecimiento fue enviado a",
 
-  // fees
+  // fees & payments
   "Configuração dos encargos lectivos: propinas por semestre e taxas administrativas adicionais.":
     "Configuración de cargos académicos: colegiaturas por semestre y tasas administrativas.",
   "Propinas": "Colegiaturas",
@@ -367,8 +507,6 @@ const ES: Record<string, string> = {
   "Designação": "Descripción",
   "Abrangência": "Aplica a",
   "Valor": "Monto",
-
-  // payments
   "Estado dos Pagamentos": "Estado de Pagos",
   "Registo de todas as transacções, método de pagamento e saldo remanescente por encargo.":
     "Registro de cada transacción, método de pago y saldo restante por cargo.",
@@ -385,8 +523,15 @@ const ES: Record<string, string> = {
   "Cartão": "Tarjeta bancaria",
   "Mobile Money": "Pago Móvil",
   "Transferência Bancária": "Transferencia Bancaria",
+  "Disparar Lembrete SMS / M-Pesa": "Recordatorio SMS / M-Pesa",
+  "Configurar M-Pesa & Cartões Moçambique": "Configurar M-Pesa y Tarjetas",
+  "Pagar Factura": "Pagar Factura",
+  "Simular Taxas": "Calcular Tasas",
+  "Solicitar Bolsa": "Solicitar Beca",
+  "Cartão de Estudante": "Tarjeta de Estudiante",
+  "Emitir Recibo": "Emitir Recibo",
 
-  // receipts
+  // receipts & docs
   "Comprovativos emitidos automaticamente após a liquidação de uma propina ou taxa.":
     "Comprobantes emitidos automáticamente tras la liquidación del cargo.",
   "recibos emitidos": "recibos emitidos",
@@ -410,17 +555,24 @@ const ES: Record<string, string> = {
   "Taxa de Certificação de Documentos": "Tasa de certificación de documentos",
 };
 
-type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (pt: string) => string };
+type Ctx = {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (pt: string) => string;
+};
 
-const LangContext = createContext<Ctx>({ lang: "pt", setLang: () => {}, t: (s) => s });
+const LangContext = createContext<Ctx>({ lang: "en", setLang: () => {}, t: (s) => s });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("pt");
+  const [lang, setLangState] = useState<Lang>("en");
 
   useEffect(() => {
     const saved = window.localStorage.getItem("ul-lang") as Lang | null;
     if (saved === "en" || saved === "pt" || saved === "fr" || saved === "es") {
       setLangState(saved);
+    } else {
+      setLangState("en");
+      window.localStorage.setItem("ul-lang", "en");
     }
   }, []);
 
@@ -432,9 +584,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         window.localStorage.setItem("ul-lang", l);
       },
       t: (pt) => {
-        if (lang === "en") return EN[pt] ?? pt;
-        if (lang === "fr") return FR[pt] ?? pt;
-        if (lang === "es") return ES[pt] ?? pt;
+        if (!pt) return "";
+        const cleanPt = pt.trim();
+        if (lang === "en") return EN[cleanPt] || EN[pt] || pt;
+        if (lang === "fr") return FR[cleanPt] || FR[pt] || pt;
+        if (lang === "es") return ES[cleanPt] || ES[pt] || pt;
         return pt;
       },
     }),

@@ -3,7 +3,7 @@ import { downloadReceipt } from "@/lib/pdf";
 import { useUniStore } from "@/lib/uni-store";
 import { dataPt, mzn } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
-import graduationImg from "@/assets/graduation.jpg";
+import studentSupportImg from "@/assets/images/student_support_1786439415676.jpg";
 
 export function Recibos() {
   const { t } = useI18n();
@@ -18,7 +18,7 @@ export function Recibos() {
     <Shell
       titulo="Recibos"
       descricao="Comprovativos emitidos automaticamente após a liquidação de uma propina ou taxa."
-      imagem={graduationImg}
+      imagem={studentSupportImg}
     >
       <Panel titulo={`${emitidos.length} ${t("recibos emitidos")}`}>
         <ul className="divide-y divide-border/60">

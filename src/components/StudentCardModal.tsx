@@ -74,9 +74,18 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
             {/* Avatar Photo */}
             <div className="col-span-4 flex flex-col items-center">
               <div className="relative flex size-24 items-center justify-center rounded-xl bg-slate-700/80 border-2 border-amber-400/40 font-display font-bold text-3xl text-amber-200 shadow-md overflow-hidden">
-                <span className="select-none">{student.nome.slice(0, 2).toUpperCase()}</span>
+                {student.foto ? (
+                  <img
+                    src={student.foto}
+                    alt={student.nome}
+                    referrerPolicy="no-referrer"
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <span className="select-none">{student.nome.slice(0, 2).toUpperCase()}</span>
+                )}
                 {student.isInternational && (
-                  <span className="absolute bottom-1 right-1 rounded-full bg-blue-600 p-1 text-[9px] text-white shadow-xs">
+                  <span className="absolute bottom-1 right-1 rounded-full bg-blue-600 p-1 text-[9px] text-white shadow-xs z-10">
                     <Globe className="size-3" />
                   </span>
                 )}

@@ -1,7 +1,7 @@
 import { Panel, Shell } from "@/components/Shell";
 import { downloadLetterhead, downloadSystemPlan, type LetterheadVariant } from "@/lib/pdf";
 import { useI18n } from "@/lib/i18n";
-import graduationImg from "@/assets/graduation.jpg";
+import studentSupportImg from "@/assets/images/student_support_1786439415676.jpg";
 
 const TIMBRADOS: { id: LetterheadVariant; nome: string; desc: string }[] = [
   { id: "geral", nome: "Papel timbrado · Uso geral", desc: "Cabeçalho institucional, referência, data e zona de assinatura." },
@@ -15,7 +15,7 @@ export function Documentos() {
     <Shell
       titulo="Documentos"
       descricao="Plano do sistema e modelos institucionais de papel timbrado, gerados em PDF no navegador."
-      imagem={graduationImg}
+      imagem={studentSupportImg}
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel titulo={t("Plano do sistema")}>

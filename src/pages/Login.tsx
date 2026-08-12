@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useRouter } from "@/lib/router";
+import { useWeb3 } from "@/lib/web3-base";
+import { SignInWithBaseButton } from "@/components/SignInWithBaseButton";
 import { Shell, Panel } from "@/components/Shell";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { UniversityLogo } from "@/components/UniversityLogo";
@@ -24,6 +26,7 @@ export function Login() {
   const { user, login, logout, resetModalOpen, setResetModalOpen } = useAuth();
   const { t } = useI18n();
   const { navigate } = useRouter();
+  const { signInWithBase, signInWithEthereum } = useWeb3();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("ul2026");
@@ -181,6 +184,36 @@ export function Login() {
                     <LogIn className="size-4" />
                     <span>{t("Entrar no Portal do Estudante")}</span>
                   </button>
+
+                  {/* Web3 / Base Sign in divider & buttons */}
+                  <div className="relative my-4 text-center">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <span className="relative bg-card px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      Ou Entrar com Web3 / Base Blockchain
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <SignInWithBaseButton
+                      onClick={async () => {
+                        const ok = await signInWithBase();
+                        if (ok) navigate("/portal");
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const ok = await signInWithEthereum();
+                        if (ok) navigate("/portal");
+                      }}
+                      className="flex items-center justify-center gap-1.5 rounded-md bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/30 p-2 text-xs font-bold transition shadow-xs cursor-pointer"
+                    >
+                      <span>Ethereum (MetaMask)</span>
+                    </button>
+                  </div>
 
                   <div className="pt-2 text-center text-[11px] text-muted-foreground">
                     {t("Precisa de apoio com o seu registo?")} {" "}

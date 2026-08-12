@@ -1,6 +1,6 @@
 {
   "name": "Build Share Hub - Leonardo University Finance Portal",
   "description": "Sistema de Gestão Universitária · Leonardo University (Propinas, Taxas, Pagamentos, Recibos, Certificados e Documentos PDF)",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

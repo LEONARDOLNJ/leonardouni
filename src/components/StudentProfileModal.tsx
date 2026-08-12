@@ -44,8 +44,17 @@ export function StudentProfileModal({ student, onClose }: StudentProfileModalPro
           <div className="border-b border-border pb-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-full bg-primary font-display text-lg font-bold text-primary-foreground">
-                  {student.nome.slice(0, 2).toUpperCase()}
+                <div className="relative flex size-12 items-center justify-center rounded-full bg-primary font-display text-lg font-bold text-primary-foreground overflow-hidden border border-border shadow-xs">
+                  {student.foto ? (
+                    <img
+                      src={student.foto}
+                      alt={student.nome}
+                      referrerPolicy="no-referrer"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    student.nome.slice(0, 2).toUpperCase()
+                  )}
                 </div>
                 <div>
                   <h2 className="font-display text-2xl font-bold text-foreground">

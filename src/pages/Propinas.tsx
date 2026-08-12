@@ -4,7 +4,7 @@ import { dataPt, fees, mzn, type Fee } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
 import { FeeCalculator } from "@/components/FeeCalculator";
 import { MobileMoneyRefModal } from "@/components/MobileMoneyRefModal";
-import financeImg from "@/assets/finance.jpg";
+import financeImg from "@/assets/images/financial_services_1786439400478.jpg";
 import { Smartphone, ArrowRight } from "lucide-react";
 
 function Tabela({

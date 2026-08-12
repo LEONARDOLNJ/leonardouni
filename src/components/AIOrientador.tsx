@@ -1,11 +1,31 @@
 import React, { useState } from "react";
 import Markdown from "react-markdown";
 import { useI18n } from "@/lib/i18n";
+import { useSubscription, SUBSCRIPTION_PLANS } from "@/lib/subscription-store";
 import { CURSOS, UNIVERSITY } from "@/lib/uni-data";
-import { Sparkles, Bot, Send, RefreshCw, HelpCircle, CheckCircle2, DollarSign, Calendar, Lightbulb, ChevronRight } from "lucide-react";
+import { AIVoiceAssistant } from "@/components/AIVoiceAssistant";
+import {
+  Sparkles,
+  Bot,
+  Send,
+  RefreshCw,
+  HelpCircle,
+  CheckCircle2,
+  DollarSign,
+  Calendar,
+  Lightbulb,
+  ChevronRight,
+  Zap,
+  Coins,
+  ShieldCheck,
+  CreditCard,
+  ArrowRight,
+  AlertCircle,
+} from "lucide-react";
 
 export function AIOrientador() {
   const { t, lang } = useI18n();
+  const { subscription, openModal, consumePrompt } = useSubscription();
 
   // Choice Simulator States
   const [curso, setCurso] = useState(CURSOS[0]);
@@ -33,6 +53,11 @@ export function AIOrientador() {
   // Handle Choice-Based Guidance Submission
   const handleGenerateGuidance = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check prompt quota
+    const hasPrompt = consumePrompt();
+    if (!hasPrompt) return;
+
     setLoadingGuidance(true);
     setGuidanceResult(null);
 
@@ -72,6 +97,10 @@ export function AIOrientador() {
   const handleSendMessage = async (textToSend?: string) => {
     const msg = textToSend || inputMsg;
     if (!msg.trim() || loadingChat) return;
+
+    // Check prompt quota
+    const hasPrompt = consumePrompt();
+    if (!hasPrompt) return;
 
     const newMessages = [...messages, { role: "user" as const, content: msg }];
     setMessages(newMessages);
@@ -149,6 +178,52 @@ export function AIOrientador() {
           >
             <Bot className="size-4" />
             <span>{chatOpen ? t("Fechar Assistente IA") : t("Conversar com Orientador IA")}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Subscription Quota Status Banner */}
+      <div className="rounded-sm border border-blue-500/30 bg-blue-950/15 p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <Zap className="size-5 fill-blue-400 text-blue-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs uppercase tracking-wider text-blue-400">
+                {subscription.planName}
+              </span>
+              <span className="rounded bg-blue-600/30 border border-blue-500/40 px-2 py-0.5 text-[10px] font-mono font-bold text-blue-300">
+                {subscription.paymentMethod}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t("Consultas / Prompts IA restantes neste ciclo")}:{" "}
+              <strong className="text-foreground font-mono">
+                {subscription.promptsRemaining} / {subscription.totalPromptsQuota}
+              </strong>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="w-32 hidden sm:block">
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all"
+                style={{
+                  width: `${Math.min(100, Math.max(0, (subscription.promptsRemaining / subscription.totalPromptsQuota) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={() => openModal()}
+            className="inline-flex items-center gap-1.5 rounded-sm bg-blue-600 hover:bg-blue-500 text-white font-bold px-3.5 py-2 text-xs transition shadow-xs shrink-0 cursor-pointer"
+          >
+            <Coins className="size-4" />
+            <span>{t("Subscrever / Recarregar com Base Pay")}</span>
           </button>
         </div>
       </div>
@@ -429,6 +504,7 @@ export function AIOrientador() {
               }
               className="flex-1 rounded-sm border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
+            <AIVoiceAssistant variant="compact" />
             <button
               onClick={() => handleSendMessage()}
               disabled={loadingChat || !inputMsg.trim()}
@@ -440,6 +516,89 @@ export function AIOrientador() {
           </div>
         </div>
       )}
+
+      {/* Subscription Plans Showcase Grid */}
+      <div className="rounded-sm border border-border bg-card p-6 space-y-6 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-0.5 text-xs font-bold text-blue-400 mb-1">
+              <Coins className="size-3.5" />
+              <span>Base Pay (USDC) Subscription Tiers</span>
+            </div>
+            <h3 className="font-display text-xl font-bold text-foreground">
+              {t("Planos de Subscrição IA do Estudante")}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t("Pague via Cartão ou Dólar Digital (USDC) em Base Sepolia ou Base Mainnet. Rentabilidade garantida para sustentabilidade da IA.")}
+            </p>
+          </div>
+
+          <button
+            onClick={() => openModal("5usdc")}
+            className="inline-flex items-center gap-2 rounded-sm bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 text-xs transition shadow-xs shrink-0 cursor-pointer"
+          >
+            <Sparkles className="size-4" />
+            <span>{t("Abrir Modal do Base Pay")}</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {SUBSCRIPTION_PLANS.map((plan) => (
+            <div
+              key={plan.id}
+              className={`rounded-sm border p-5 flex flex-col justify-between space-y-4 relative ${
+                plan.popular
+                  ? "border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/50"
+                  : "border-border bg-muted/20"
+              }`}
+            >
+              {plan.popular && (
+                <span className="absolute -top-3 right-4 rounded-full bg-blue-600 text-white text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider shadow-xs">
+                  {t("Recomendado")}
+                </span>
+              )}
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-bold text-base text-foreground">{plan.name}</h4>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="font-display text-3xl font-black text-blue-400">
+                      ${plan.priceUsdc}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">
+                      USDC / {t("mês")}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded bg-background border border-border p-2 text-xs font-mono font-semibold text-foreground flex items-center justify-between">
+                  <span>{plan.monthlyPrompts} {t("Prompts IA")}</span>
+                  <span className="text-emerald-400 text-[11px] font-bold">
+                    Margem {plan.profitMarginPercent}%
+                  </span>
+                </div>
+
+                <ul className="space-y-1.5 text-xs text-muted-foreground">
+                  {plan.features.map((f, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <CheckCircle2 className="size-3.5 text-blue-400 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button
+                onClick={() => openModal(plan.id)}
+                className="w-full rounded-sm bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>{t("Subscrever por")} ${plan.priceUsdc} USDC</span>
+                <ArrowRight className="size-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
