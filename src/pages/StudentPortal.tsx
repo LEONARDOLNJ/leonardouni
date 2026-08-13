@@ -8,6 +8,7 @@ import { MobileMoneyRefModal } from "@/components/MobileMoneyRefModal";
 import { StudentCardModal } from "@/components/StudentCardModal";
 import { ScholarshipRequestModal } from "@/components/ScholarshipRequestModal";
 import { PayInvoiceModal } from "@/components/PayInvoiceModal";
+import { StudentActivityTrackerModal } from "@/components/StudentActivityTrackerModal";
 import { useUniStore } from "@/lib/uni-store";
 import {
   payments as initialPayments,
@@ -38,6 +39,9 @@ import {
   QrCode,
   Award,
   Sparkles,
+  Database,
+  MapPin,
+  Activity,
 } from "lucide-react";
 import heroImg from "@/assets/campus-hero.jpg";
 
@@ -52,6 +56,7 @@ export function StudentPortal() {
   const [mobileModalPayment, setMobileModalPayment] = useState<Payment | null>(null);
   const [showStudentCard, setShowStudentCard] = useState(false);
   const [showScholarshipModal, setShowScholarshipModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
   const [selectedPayInvoice, setSelectedPayInvoice] = useState<{
     fee: Fee;
     payment?: Payment;
@@ -170,10 +175,18 @@ export function StudentPortal() {
 
               <button
                 onClick={() => setShowScholarshipModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-sm border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-sm border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition shadow-xs cursor-pointer"
               >
                 <Award className="size-3.5" />
                 <span>{t("Solicitar Bolsa / Apoio")}</span>
+              </button>
+
+              <button
+                onClick={() => setShowActivityModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition shadow-xs cursor-pointer"
+              >
+                <Database className="size-3.5" />
+                <span>{t("Histórico MongoDB & Localização")}</span>
               </button>
 
               <div className="flex items-center gap-1 rounded-sm border border-border bg-muted/30 p-1 text-xs">
@@ -510,6 +523,14 @@ export function StudentPortal() {
         <ScholarshipRequestModal
           student={user}
           onClose={() => setShowScholarshipModal(false)}
+        />
+      )}
+
+      {showActivityModal && (
+        <StudentActivityTrackerModal
+          studentId={user.id}
+          studentName={user.nome}
+          onClose={() => setShowActivityModal(false)}
         />
       )}
 

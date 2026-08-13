@@ -1,7 +1,20 @@
 import React, { useState } from "react";
 import { type Student, mzn } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
-import { X, Award, FileText, CheckCircle2, ShieldCheck, Upload, Send, Clock, AlertCircle } from "lucide-react";
+import {
+  X,
+  Award,
+  FileText,
+  CheckCircle2,
+  ShieldCheck,
+  Upload,
+  Send,
+  Clock,
+  Sparkles,
+  RefreshCw,
+  Bot,
+  AlertCircle,
+} from "lucide-react";
 
 interface ScholarshipRequestModalProps {
   student: Student;
@@ -9,7 +22,7 @@ interface ScholarshipRequestModalProps {
 }
 
 export function ScholarshipRequestModal({ student, onClose }: ScholarshipRequestModalProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const [requestType, setRequestType] = useState<
     "merit" | "social" | "family" | "extension"
@@ -18,6 +31,44 @@ export function ScholarshipRequestModal({ student, onClose }: ScholarshipRequest
   const [reason, setReason] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [protocolNumber, setProtocolNumber] = useState("");
+
+  // AI Evaluation state
+  const [evaluatingAi, setEvaluatingAi] = useState(false);
+  const [aiEvaluation, setAiEvaluation] = useState<{
+    eligible: boolean;
+    score: number;
+    discountPercent: number;
+    recommendation: string;
+  } | null>(null);
+
+  const handleAiEvaluate = async () => {
+    if (!reason.trim()) return;
+    setEvaluatingAi(true);
+    setAiEvaluation(null);
+
+    try {
+      const res = await fetch("/api/ai/scholarship-evaluator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentName: student.nome,
+          curso: student.curso,
+          ano: student.ano,
+          requestType,
+          reason,
+          lang,
+        }),
+      });
+      const data = await res.json();
+      if (data.recommendation) {
+        setAiEvaluation(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setEvaluatingAi(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +191,51 @@ export function ScholarshipRequestModal({ student, onClose }: ScholarshipRequest
                 <p className="text-[10px] text-muted-foreground">
                   {t("Declaração de rendimentos, boletim de notas ou comprovativo de agregado familiar (PDF/JPG)")}
                 </p>
+              </div>
+
+              {/* AI Pre-Evaluation Section */}
+              <div className="rounded-sm border border-blue-500/30 bg-blue-950/15 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-blue-400 font-bold">
+                    <Sparkles className="size-4" />
+                    <span>{t("Avaliação Preliminar IA de Elegibilidade")}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAiEvaluate}
+                    disabled={evaluatingAi || !reason.trim()}
+                    className="inline-flex items-center gap-1 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-[11px] font-bold px-2.5 py-1 transition cursor-pointer"
+                  >
+                    {evaluatingAi ? (
+                      <>
+                        <RefreshCw className="size-3 animate-spin" />
+                        <span>{t("A avaliar...")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bot className="size-3" />
+                        <span>{t("Testar Elegibilidade com IA")}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {aiEvaluation && (
+                  <div className="p-2.5 bg-background border border-blue-500/40 rounded text-xs space-y-1.5 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="size-3.5" />
+                        <span>Elegível (Pontuação: {aiEvaluation.score}/100)</span>
+                      </span>
+                      <span className="font-mono font-bold text-blue-300">
+                        Desconto Estimado: {aiEvaluation.discountPercent}%
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-[11px] leading-relaxed">
+                      {aiEvaluation.recommendation}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 flex justify-end gap-2">

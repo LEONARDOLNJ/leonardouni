@@ -10,8 +10,12 @@ declare global {
   }
 }
 
-// Target Receiving Wallet Address specified by user
-export const RECEIVING_WALLET_ADDRESS = "0xAbF6dc8D749Ffca0013535888c7Fd6551001b4D0";
+// Target Receiving Wallet Address specified by user / env
+const envPaymentAddress =
+  (typeof import.meta !== "undefined" && (import.meta.env?.NEXT_PUBLIC_PAYMENT_ADDRESS || import.meta.env?.VITE_PAYMENT_ADDRESS)) ||
+  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_PAYMENT_ADDRESS);
+
+export const RECEIVING_WALLET_ADDRESS = envPaymentAddress || "0xAbF6dc8D749Ffca0013535888c7Fd6551001b4D0";
 
 // Base Sepolia Testnet Configs (Chain ID: 84532 / 0x14a34)
 export const BASE_SEPOLIA_CHAIN_ID = "0x14a34"; // 84532 in hex
@@ -207,7 +211,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         setNetworkName("Base Sepolia (84532)");
         return true;
       } catch (addErr) {
-        console.error("Error adding Base Sepolia chain:", addErr);
+        console.warn("Notice adding Base Sepolia chain:", addErr);
         return false;
       }
     }
@@ -497,10 +501,10 @@ Issued At: ${issuedAt}`;
         };
       }
     } catch (txErr: any) {
-      console.error("Base Pay Sepolia real transaction error:", txErr);
       setIsConnecting(false);
 
       if (txErr?.code === 4001 || txErr?.message?.includes("rejected") || txErr?.message?.includes("denied")) {
+        console.warn("Base Pay transaction cancelled by user:", txErr?.message || txErr);
         const userCancelMsg = "Transacção cancelada pelo utilizador na carteira Base.";
         setError(userCancelMsg);
         return {
@@ -509,6 +513,7 @@ Issued At: ${issuedAt}`;
         };
       }
 
+      console.warn("Base Pay Sepolia transaction notice:", txErr?.message || txErr);
       const walletErrMsg = txErr?.message || "Erro ao processar transacção na carteira Base (Base Sepolia 84532).";
       setError(walletErrMsg);
       return {

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { students, type Student } from "./uni-data";
+import { logStudentActivity, trackStudentLocation } from "./location";
 
 export interface BaseAuthSession {
   address: string;
@@ -8,10 +9,24 @@ export interface BaseAuthSession {
   timestamp: string;
 }
 
+export interface SignupData {
+  nome: string;
+  email: string;
+  password?: string;
+  curso?: string;
+  ano?: number;
+  docId?: string;
+  tipoDocumento?: "BI" | "Passaporte" | "DIRE";
+  nacionalidade?: string;
+  isInternational?: boolean;
+  foto?: string;
+}
+
 interface AuthContextType {
   user: Student | null;
   baseSession: BaseAuthSession | null;
-  login: (emailOrId: string, password: string) => { success: boolean; error?: string };
+  login: (emailOrId: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
   loginWithBaseAccount: (address: string, signature: string, message: string) => { success: boolean };
   logout: () => void;
   requestPasswordReset: (email: string) => { success: boolean; message: string };
@@ -22,7 +37,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   baseSession: null,
-  login: () => ({ success: false }),
+  login: async () => ({ success: false }),
+  signup: async () => ({ success: false }),
   loginWithBaseAccount: () => ({ success: false }),
   logout: () => {},
   requestPasswordReset: () => ({ success: false, message: "" }),
@@ -63,6 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    const savedUserJson = localStorage.getItem("ul-auth-student-obj");
+    if (savedUserJson) {
+      try {
+        setUser(JSON.parse(savedUserJson));
+        return;
+      } catch (err) {
+        console.warn("User restore error:", err);
+      }
+    }
+
     const savedId = localStorage.getItem("ul-auth-student");
     if (savedId) {
       const found = students.find((s) => s.id === savedId || s.email === savedId);
@@ -72,8 +98,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = (emailOrId: string, _password: string) => {
+  const signup = async (data: SignupData) => {
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const body = await res.json();
+      if (!res.ok || !body.success) {
+        return { success: false, error: body.error || "Erro ao criar conta." };
+      }
+
+      const newStudent: Student = body.student;
+      setUser(newStudent);
+      localStorage.setItem("ul-auth-student", newStudent.id);
+      localStorage.setItem("ul-auth-student-obj", JSON.stringify(newStudent));
+
+      // Trigger location tracking and activity logging in background
+      trackStudentLocation(newStudent.id);
+      logStudentActivity(newStudent.id, "SIGNUP_SUCCESS", { email: newStudent.email });
+
+      return { success: true };
+    } catch (err: any) {
+      console.warn("MongoDB signup sync fallback:", err);
+
+      // Fallback local creation if offline
+      const fallbackStudent: Student = {
+        id: `EST-2026-${Math.floor(100 + Math.random() * 900)}`,
+        nome: data.nome,
+        email: data.email,
+        docId: data.docId || `${Math.floor(10000000 + Math.random() * 90000000)}M`,
+        tipoDocumento: data.tipoDocumento || "BI",
+        curso: data.curso || "Engenharia Informática",
+        ano: data.ano || 1,
+        nacionalidade: data.nacionalidade || "Moçambique",
+        isInternational: Boolean(data.isInternational),
+        foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+      };
+
+      setUser(fallbackStudent);
+      localStorage.setItem("ul-auth-student", fallbackStudent.id);
+      localStorage.setItem("ul-auth-student-obj", JSON.stringify(fallbackStudent));
+      return { success: true };
+    }
+  };
+
+  const login = async (emailOrId: string, password: string) => {
     const trimmed = emailOrId.trim().toLowerCase();
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: trimmed, password }),
+      });
+
+      const body = await res.json();
+      if (res.ok && body.success && body.student) {
+        const student: Student = body.student;
+        setUser(student);
+        localStorage.setItem("ul-auth-student", student.id);
+        localStorage.setItem("ul-auth-student-obj", JSON.stringify(student));
+
+        // Track location and record activity log
+        trackStudentLocation(student.id);
+        logStudentActivity(student.id, "LOGIN_SUCCESS", { email: student.email });
+
+        return { success: true };
+      }
+    } catch (err) {
+      console.warn("MongoDB login sync fallback:", err);
+    }
+
+    // Local default students fallback
     const found = students.find(
       (s) => s.id.toLowerCase() === trimmed || s.email.toLowerCase() === trimmed
     );
@@ -87,13 +186,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setUser(found);
     localStorage.setItem("ul-auth-student", found.id);
+    localStorage.setItem("ul-auth-student-obj", JSON.stringify(found));
+
+    // Track location and activity
+    trackStudentLocation(found.id);
+    logStudentActivity(found.id, "LOGIN_SUCCESS", { email: found.email });
+
     return { success: true };
   };
 
   const loginWithBaseAccount = (address: string, signature: string, message: string) => {
     const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
-    
-    // Check if we have a default student or construct a Base-authenticated profile
     const existing = students.find((s) => s.email.toLowerCase().includes(address.toLowerCase().slice(2, 8))) || students[0];
 
     const baseStudent: Student = {
@@ -113,15 +216,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(baseStudent);
     setBaseSession(session);
     localStorage.setItem("ul-auth-student", baseStudent.id);
+    localStorage.setItem("ul-auth-student-obj", JSON.stringify(baseStudent));
     localStorage.setItem("ul-auth-base-session", JSON.stringify(session));
+
+    // Log Base Account login in MongoDB
+    trackStudentLocation(baseStudent.id);
+    logStudentActivity(baseStudent.id, "BASE_ACCOUNT_LOGIN", { address, signature });
 
     return { success: true };
   };
 
   const logout = () => {
+    if (user?.id) {
+      logStudentActivity(user.id, "LOGOUT", {});
+    }
     setUser(null);
     setBaseSession(null);
     localStorage.removeItem("ul-auth-student");
+    localStorage.removeItem("ul-auth-student-obj");
     localStorage.removeItem("ul-auth-base-session");
     localStorage.removeItem("ul-web3-address");
     localStorage.removeItem("ul-web3-type");
@@ -153,6 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         baseSession,
         login,
+        signup,
         loginWithBaseAccount,
         logout,
         requestPasswordReset,
@@ -168,4 +281,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
-
