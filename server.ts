@@ -593,7 +593,7 @@ app.get("/api/db/status", async (req, res) => {
 // User Sign Up (Store in MongoDB users collection)
 app.post("/api/auth/signup", async (req, res) => {
   try {
-    const { nome, email, password, curso, ano, docId, tipoDocumento, nacionalidade, isInternational, foto } = req.body;
+    const { nome, email, password, curso, ano, docId, tipoDocumento, nacionalidade, isInternational, foto, walletAddress } = req.body;
 
     if (!nome || !email) {
       return res.status(400).json({ error: "Nome e Email são obrigatórios." });
@@ -614,6 +614,7 @@ app.post("/api/auth/signup", async (req, res) => {
       nacionalidade: nacionalidade || "Moçambique",
       isInternational: Boolean(isInternational),
       foto: foto || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+      walletAddress: walletAddress || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -626,11 +627,13 @@ app.post("/api/auth/signup", async (req, res) => {
 
       await db.collection("users").insertOne(newStudent);
 
-      // Record activity in MongoDB
+      // Record activity and initial session in MongoDB
       await db.collection("activities").insertOne({
         studentId: newStudent.id,
         actionType: "SIGNUP",
-        details: { email: newStudent.email, curso: newStudent.curso },
+        details: { email: newStudent.email, curso: newStudent.curso, walletAddress: newStudent.walletAddress },
+        ip: req.ip || req.headers["x-forwarded-for"] || "127.0.0.1",
+        userAgent: req.headers["user-agent"] || "",
         timestamp: new Date().toISOString(),
       });
     }
@@ -643,6 +646,79 @@ app.post("/api/auth/signup", async (req, res) => {
   } catch (error: any) {
     console.error("Signup error:", error);
     res.status(500).json({ error: error.message || "Erro ao criar conta." });
+  }
+});
+
+// Link Wallet Address to User Profile in MongoDB
+app.post("/api/user/link-wallet", async (req, res) => {
+  try {
+    const { studentId, walletAddress, walletType } = req.body;
+    if (!studentId || !walletAddress) {
+      return res.status(400).json({ error: "studentId e walletAddress são obrigatórios." });
+    }
+
+    const { db, isConnected } = await connectToDatabase();
+    if (isConnected && db) {
+      await db.collection("users").updateOne(
+        { id: studentId.toUpperCase() },
+        {
+          $set: {
+            walletAddress,
+            walletType: walletType || "base",
+            lastWalletConnectedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
+
+      // Record WALLET_LINKED activity
+      await db.collection("activities").insertOne({
+        studentId: studentId.toUpperCase(),
+        actionType: "WALLET_LINKED",
+        details: { walletAddress, walletType },
+        ip: req.ip || req.headers["x-forwarded-for"] || "127.0.0.1",
+        userAgent: req.headers["user-agent"] || "",
+        timestamp: new Date().toISOString(),
+      });
+
+      return res.json({ success: true, message: "Endereço de carteira associado com sucesso no MongoDB." });
+    }
+
+    res.json({ success: true, message: "Modo offline fallback." });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get User Full Profile (including wallet, activity history, sessions, and payments from MongoDB)
+app.get("/api/user/profile", async (req, res) => {
+  try {
+    const { studentId } = req.query;
+    if (!studentId) {
+      return res.status(400).json({ error: "studentId é obrigatório." });
+    }
+
+    const stId = String(studentId).toUpperCase();
+    const { db, isConnected } = await connectToDatabase();
+
+    if (isConnected && db) {
+      const user = await db.collection("users").findOne({ id: stId });
+      const activities = await db.collection("activities").find({ studentId: stId }).sort({ timestamp: -1 }).limit(50).toArray();
+      const locations = await db.collection("locations").find({ studentId: stId }).sort({ timestamp: -1 }).limit(20).toArray();
+      const payments = await db.collection("payments").find({ studentId: stId }).sort({ timestamp: -1 }).toArray();
+
+      return res.json({
+        success: true,
+        user,
+        activities,
+        locations,
+        payments,
+      });
+    }
+
+    res.json({ success: false, message: "Base de dados MongoDB indisponível." });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

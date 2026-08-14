@@ -26,21 +26,28 @@ export function StudentActivityTrackerModal({
 }: StudentActivityTrackerModalProps) {
   const { t } = useI18n();
 
-  const [activeTab, setActiveTab] = useState<"activity" | "location">("activity");
+  const [activeTab, setActiveTab] = useState<"profile" | "activity" | "location">("profile");
+  const [profile, setProfile] = useState<any>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [actRes, locRes] = await Promise.all([
-        fetch(`/api/activity?studentId=${studentId}`).then((r) => r.json()),
-        fetch(`/api/location?studentId=${studentId}`).then((r) => r.json()),
+      const [profRes, actRes, locRes] = await Promise.all([
+        fetch(`/api/user/profile?studentId=${studentId}`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/activity?studentId=${studentId}`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/location?studentId=${studentId}`).then((r) => r.json()).catch(() => null),
       ]);
 
-      setActivities(actRes.activities || []);
-      setLocations(locRes.locations || []);
+      if (profRes && profRes.success) {
+        setProfile(profRes.user);
+        if (profRes.payments) setPayments(profRes.payments);
+      }
+      setActivities(actRes?.activities || []);
+      setLocations(locRes?.locations || []);
     } catch (err) {
       console.warn("Error fetching activity/location from MongoDB:", err);
     } finally {
@@ -81,6 +88,17 @@ export function StudentActivityTrackerModal({
         {/* Tab Selection */}
         <div className="flex border-b border-border bg-background px-4 pt-2">
           <button
+            onClick={() => setActiveTab("profile")}
+            className={`px-4 py-2 text-xs font-bold border-b-2 transition cursor-pointer flex items-center gap-2 ${
+              activeTab === "profile"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ShieldCheck className="size-4" />
+            <span>Perfil & Carteira Web3</span>
+          </button>
+          <button
             onClick={() => setActiveTab("activity")}
             className={`px-4 py-2 text-xs font-bold border-b-2 transition cursor-pointer flex items-center gap-2 ${
               activeTab === "activity"
@@ -89,7 +107,7 @@ export function StudentActivityTrackerModal({
             }`}
           >
             <Activity className="size-4" />
-            <span>Histórico de Atividades ({activities.length})</span>
+            <span>Atividades ({activities.length})</span>
           </button>
           <button
             onClick={() => setActiveTab("location")}
@@ -100,7 +118,7 @@ export function StudentActivityTrackerModal({
             }`}
           >
             <MapPin className="size-4" />
-            <span>Rastreamento de Geolocalização ({locations.length})</span>
+            <span>Geolocalização ({locations.length})</span>
           </button>
           <button
             onClick={fetchData}
@@ -117,6 +135,93 @@ export function StudentActivityTrackerModal({
             <div className="py-12 text-center space-y-2">
               <RefreshCw className="size-6 animate-spin text-primary mx-auto" />
               <p className="text-xs text-muted-foreground">A carregar dados do MongoDB...</p>
+            </div>
+          ) : activeTab === "profile" ? (
+            <div className="space-y-4 text-xs">
+              <div className="rounded-md border border-border p-4 bg-muted/20 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                  <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
+                    <CheckCircle2 className="size-4 text-emerald-500" />
+                    <span>Detalhes do Perfil Guardado no MongoDB</span>
+                  </h4>
+                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded font-mono font-bold">
+                    Coleção: users
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Nome Completo:</span>
+                    <span className="font-bold text-foreground">{profile?.nome || studentName}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Email Registado:</span>
+                    <span className="font-bold text-foreground">{profile?.email || "N/A"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">ID de Estudante:</span>
+                    <span className="font-mono font-bold text-primary">{profile?.id || studentId}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Curso:</span>
+                    <span className="font-medium text-foreground">{profile?.curso || "Engenharia Informática"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Documento de Identificação:</span>
+                    <span className="font-mono text-foreground">{profile?.docId || "BI Verified"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Nacionalidade:</span>
+                    <span className="text-foreground">{profile?.nacionalidade || "Moçambique"}</span>
+                  </div>
+                </div>
+
+                {/* Wallet Address section */}
+                <div className="mt-2 pt-3 border-t border-border/50">
+                  <span className="text-muted-foreground block text-[10px] mb-1 font-semibold">
+                    Endereço de Carteira Web3 / Base Sepolia (MongoDB):
+                  </span>
+                  {profile?.walletAddress ? (
+                    <div className="flex items-center justify-between bg-background p-2.5 rounded border border-emerald-500/30 font-mono text-xs">
+                      <span className="font-bold text-emerald-600 truncate">{profile.walletAddress}</span>
+                      <span className="shrink-0 text-[10px] bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded font-sans font-bold">
+                        Ligado na Base
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="bg-background p-2.5 rounded border border-border text-muted-foreground text-[11px] italic">
+                      Nenhuma carteira Web3 associada até ao momento. Ao conetar com a Base Wallet / MetaMask, o endereço é guardado automaticamente no perfil MongoDB.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Records from MongoDB */}
+              {payments.length > 0 && (
+                <div className="rounded-md border border-border p-3 bg-muted/10 space-y-2">
+                  <h5 className="font-bold text-xs text-foreground">
+                    Pagamentos Registados no MongoDB ({payments.length})
+                  </h5>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {payments.map((p, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-background p-2 rounded border border-border/50 text-[11px]">
+                        <div>
+                          <span className="font-bold text-foreground">{p.feeTitle || p.metodo}</span>
+                          <span className="text-[10px] text-muted-foreground block font-mono">
+                            Recibo: {p.recibo || p.transactionId || "N/A"}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-emerald-600">{p.valorPago || p.amount} MZN</span>
+                          <span className="text-[10px] text-muted-foreground block font-mono">
+                            {new Date(p.timestamp || p.data).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : activeTab === "activity" ? (
             activities.length === 0 ? (

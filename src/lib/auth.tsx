@@ -20,6 +20,7 @@ export interface SignupData {
   nacionalidade?: string;
   isInternational?: boolean;
   foto?: string;
+  walletAddress?: string;
 }
 
 interface AuthContextType {
@@ -28,6 +29,7 @@ interface AuthContextType {
   login: (emailOrId: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
   loginWithBaseAccount: (address: string, signature: string, message: string) => { success: boolean };
+  linkWallet: (walletAddress: string, walletType?: string) => Promise<void>;
   logout: () => void;
   requestPasswordReset: (email: string) => { success: boolean; message: string };
   resetModalOpen: boolean;
@@ -40,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => ({ success: false }),
   signup: async () => ({ success: false }),
   loginWithBaseAccount: () => ({ success: false }),
+  linkWallet: async () => {},
   logout: () => {},
   requestPasswordReset: () => ({ success: false, message: "" }),
   resetModalOpen: false,
@@ -219,11 +222,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("ul-auth-student-obj", JSON.stringify(baseStudent));
     localStorage.setItem("ul-auth-base-session", JSON.stringify(session));
 
-    // Log Base Account login in MongoDB
+    // Log Base Account login in MongoDB and sync wallet to user profile
     trackStudentLocation(baseStudent.id);
     logStudentActivity(baseStudent.id, "BASE_ACCOUNT_LOGIN", { address, signature });
 
+    fetch("/api/user/link-wallet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentId: baseStudent.id, walletAddress: address, walletType: "base" }),
+    }).catch((e) => console.warn("link-wallet sync warning:", e));
+
     return { success: true };
+  };
+
+  const linkWallet = async (walletAddress: string, walletType: string = "base") => {
+    if (!user) return;
+
+    try {
+      await fetch("/api/user/link-wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: user.id, walletAddress, walletType }),
+      });
+
+      const updatedUser = { ...user, walletAddress };
+      setUser(updatedUser);
+      localStorage.setItem("ul-auth-student-obj", JSON.stringify(updatedUser));
+    } catch (e) {
+      console.warn("linkWallet error:", e);
+    }
   };
 
   const logout = () => {
@@ -267,6 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         signup,
         loginWithBaseAccount,
+        linkWallet,
         logout,
         requestPasswordReset,
         resetModalOpen,

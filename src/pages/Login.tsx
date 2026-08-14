@@ -53,6 +53,7 @@ export function Login() {
   const [signupDocType, setSignupDocType] = useState<"BI" | "Passaporte" | "DIRE">("BI");
   const [signupNacionalidade, setSignupNacionalidade] = useState("Moçambique");
   const [signupIsIntl, setSignupIsIntl] = useState(false);
+  const [signupWallet, setSignupWallet] = useState("");
 
   // MongoDB status
   const [dbStatus, setDbStatus] = useState<{ isConnected: boolean; databaseName?: string; error?: string; collections?: any } | null>(null);
@@ -104,6 +105,7 @@ export function Login() {
       tipoDocumento: signupDocType,
       nacionalidade: signupNacionalidade,
       isInternational: signupIsIntl,
+      walletAddress: signupWallet || undefined,
     });
 
     setLoading(false);
@@ -455,6 +457,17 @@ export function Login() {
                           className="w-full rounded-sm border border-input bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                       </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground">Carteira Web3 / Base Address (Opcional)</label>
+                      <input
+                        type="text"
+                        value={signupWallet}
+                        onChange={(e) => setSignupWallet(e.target.value)}
+                        placeholder="0x..."
+                        className="w-full rounded-sm border border-input bg-background px-3 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
                     </div>
 
                     <button

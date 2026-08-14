@@ -494,6 +494,27 @@ Issued At: ${issuedAt}`;
         await fetchBalances(currentAddr);
         setIsConnecting(false);
 
+        // Record Base Pay transaction in MongoDB payments history
+        try {
+          await fetch("/api/payments/history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: studentId || "EST-2024-001",
+              feeTitle: feeTitle || "Propina Leonardo University",
+              valorPago: amountMzn,
+              data: new Date().toISOString(),
+              metodo: `Base Pay (${payTokenType || "ETH"} - Chain 84532)`,
+              estado: "pago",
+              recibo: txHashResult,
+              txHash: txHashResult,
+              senderAddress: currentAddr,
+            }),
+          });
+        } catch (dbErr) {
+          console.warn("Base Pay MongoDB recording notice:", dbErr);
+        }
+
         return {
           success: true,
           txHash: txHashResult,
