@@ -16,6 +16,8 @@ import { OrientadorPage } from "@/pages/Orientador";
 import { Subscricoes } from "@/pages/Subscricoes";
 import { Login } from "@/pages/Login";
 import { StudentPortal } from "@/pages/StudentPortal";
+import { AcademicAnalytics } from "@/pages/AcademicAnalytics";
+import { CampusHub } from "@/pages/CampusHub";
 
 function AppRoutes() {
   const { path } = useRouter();
@@ -25,6 +27,12 @@ function AppRoutes() {
   }
   if (path === "/portal") {
     return <StudentPortal />;
+  }
+  if (path === "/analytics") {
+    return <AcademicAnalytics />;
+  }
+  if (path === "/hub") {
+    return <CampusHub />;
   }
   if (path === "/orientador") {
     return <OrientadorPage />;
