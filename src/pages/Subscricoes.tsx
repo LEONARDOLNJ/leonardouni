@@ -7,6 +7,12 @@ import {
   SUBSCRIPTION_PLANS,
   type SubscriptionTierId,
 } from "@/lib/subscription-store";
+import {
+  type CurrencyCode,
+  formatCurrency,
+  convertUsdToCurrency,
+  MZN_USD_RATE,
+} from "@/lib/uni-data";
 import { SignInWithBaseButton, BaseLogoSvg } from "@/components/SignInWithBaseButton";
 import { PaymentCredentialsModal } from "@/components/PaymentCredentialsModal";
 import {
@@ -26,12 +32,23 @@ import {
   Receipt,
   Layers,
   Key,
+  DollarSign,
+  Coins,
 } from "lucide-react";
 
 export function Subscricoes() {
   const { t } = useI18n();
   const { address, walletType, networkName, chainId, signInWithBase } = useWeb3();
-  const { subscription, openModal, consumePrompt } = useSubscription();
+  const {
+    subscription,
+    history,
+    openModal,
+    consumePrompt,
+    selectedCurrency,
+    setSelectedCurrency,
+    formatPrice,
+    getPriceInCurrency,
+  } = useSubscription();
 
   const [copiedTx, setCopiedTx] = useState(false);
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
@@ -75,20 +92,60 @@ export function Subscricoes() {
       )}
     >
       <div className="space-y-8">
+        {/* Currency Selector Bar */}
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-md bg-primary/10 text-primary">
+              <DollarSign className="size-5" />
+            </div>
+            <div>
+              <span className="font-bold text-sm text-foreground">
+                Moeda de Exibição & Pagamento
+              </span>
+              <p className="text-xs text-muted-foreground">
+                Escolha a moeda local de Moçambique (Meticais) ou moedas internacionais para visualizar os preços e pagar.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 bg-muted p-1 rounded-lg border border-border">
+            {(
+              [
+                { code: "MZN", label: "🇲🇿 MZN (Metical Moçambique)", short: "MZN (MT)" },
+                { code: "USD", label: "🇺🇸 USD (Dólar / USDC)", short: "USD ($)" },
+                { code: "EUR", label: "🇪🇺 EUR (Euro)", short: "EUR (€)" },
+                { code: "ZAR", label: "🇿🇦 ZAR (Rand África do Sul)", short: "ZAR (R)" },
+              ] as const
+            ).map((curr) => (
+              <button
+                key={curr.code}
+                type="button"
+                onClick={() => setSelectedCurrency(curr.code)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+                  selectedCurrency === curr.code
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                }`}
+              >
+                <span>{curr.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Banner Superior Base Pay */}
         <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 p-6 text-white shadow-lg">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-white/20">
                 <BaseLogoSvg className="size-4" />
-                <span>Base Pay · USDC Subscriptions L2</span>
+                <span>Base Pay · USDC & Multi-Currency Subscriptions L2</span>
               </div>
               <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
                 Cota de Inteligência Artificial para Estudantes
               </h2>
               <p className="text-sm text-blue-100 leading-relaxed">
-                Subscreva com micropagamentos em USDC na Layer 2 Base com taxas quase nulas (&lt; $0.001)
-                ou cartão bancário tradicional.
+                Subscreva com moeda local em Meticais (MZN via M-Pesa/Cartão), micropagamentos em USDC na Layer 2 Base com taxas quase nulas (&lt; $0.001), Euros ou Rands.
               </p>
             </div>
 
@@ -152,15 +209,20 @@ export function Subscricoes() {
                     Método de Pagamento
                   </span>
                   <p className="text-sm font-semibold text-foreground flex items-center justify-end gap-1.5">
-                    {subscription.paymentMethod === "Base Pay (USDC)" ? (
+                    {subscription.paymentMethod === "Crypto (Base Pay)" || subscription.paymentMethod === "Base Pay (USDC)" ? (
                       <>
                         <BaseLogoSvg className="size-4" />
-                        <span>Base Pay (USDC)</span>
+                        <span>Crypto (Base Pay USDC)</span>
+                      </>
+                    ) : subscription.paymentMethod === "M-Pesa" ? (
+                      <>
+                        <Zap className="size-4 text-emerald-500" />
+                        <span>Vodacom M-Pesa</span>
                       </>
                     ) : subscription.paymentMethod === "Card" ? (
                       <>
                         <CreditCard className="size-4 text-blue-500" />
-                        <span>Cartão de Crédito</span>
+                        <span>Cartão Bancário</span>
                       </>
                     ) : (
                       <span>Grátis (Demonstração)</span>
@@ -221,8 +283,10 @@ export function Subscricoes() {
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Layers className="size-4 text-blue-500 shrink-0" />
                   <div>
-                    <span className="block font-semibold text-foreground">Rede Blockchain</span>
-                    <span>{subscription.networkUsed || "Base Mainnet (0x2105)"}</span>
+                    <span className="block font-semibold text-foreground">Moeda / Rede Registada</span>
+                    <span>
+                      {subscription.currency || "USD"} · {subscription.networkUsed || "Base Sepolia"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -256,16 +320,16 @@ export function Subscricoes() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-primary font-bold text-sm">
                   <ShieldCheck className="size-5 text-emerald-500" />
-                  <span>Comprovativo On-Chain</span>
+                  <span>Comprovativo On-Chain & Recibos</span>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Todas as subscrições realizadas através do Base Pay são registadas de forma imutável na blockchain Base.
+                  Todas as subscrições realizadas através do Base Pay são registadas de forma imutável na blockchain Base e integradas ao Portal do Estudante.
                 </p>
 
                 {subscription.lastTxHash ? (
                   <div className="space-y-2 pt-2">
                     <span className="text-[11px] font-semibold text-muted-foreground uppercase">
-                      Hash de Transacção
+                      Hash de Transacção / Recibo
                     </span>
                     <div className="flex items-center justify-between gap-2 rounded bg-muted p-2 font-mono text-[11px] text-foreground">
                       <span className="truncate">{subscription.lastTxHash}</span>
@@ -282,19 +346,25 @@ export function Subscricoes() {
                       <p className="text-[10px] text-emerald-600 font-semibold">Copiado para a área de transferência!</p>
                     )}
 
-                    <a
-                      href={getBasescanUrl(subscription.lastTxHash)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-500 dark:text-blue-400 pt-1"
-                    >
-                      <span>Ver no BaseScan Explorer</span>
-                      <ExternalLink className="size-3.5" />
-                    </a>
+                    {subscription.lastTxHash.startsWith("0x") ? (
+                      <a
+                        href={getBasescanUrl(subscription.lastTxHash)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-500 dark:text-blue-400 pt-1"
+                      >
+                        <span>Ver no BaseScan Explorer</span>
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground block pt-1">
+                        Autenticado via Gateway ({subscription.paymentMethod})
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <div className="p-3 rounded bg-muted/50 text-xs text-muted-foreground italic">
-                    Nenhuma transacção blockchain recente registada.
+                    Nenhuma transacção recente registada.
                   </div>
                 )}
               </div>
@@ -312,10 +382,11 @@ export function Subscricoes() {
         </Panel>
 
         {/* Tabela Comparativa dos Planos de Subscrição */}
-        <Panel titulo="Planos e Pacotes de Consultas IA (Base Pay & Cartão)">
+        <Panel titulo={`Planos e Pacotes de Consultas IA (Valores em ${selectedCurrency})`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {SUBSCRIPTION_PLANS.map((plan) => {
               const isCurrent = subscription.tierId === plan.id;
+              const formattedPlanPrice = formatPrice(plan.priceUsdc);
 
               return (
                 <div
@@ -337,11 +408,16 @@ export function Subscricoes() {
                     <div className="border-b border-border pb-4 space-y-1">
                       <h4 className="text-lg font-bold text-foreground">{plan.name}</h4>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black text-foreground">${plan.priceUsdc}</span>
+                        <span className="text-2xl sm:text-3xl font-black text-foreground">{formattedPlanPrice}</span>
                         <span className="text-xs text-muted-foreground font-semibold">
-                          USDC / mês
+                          / mês
                         </span>
                       </div>
+                      {selectedCurrency !== "USD" && (
+                        <p className="text-[11px] font-mono text-muted-foreground">
+                          ≈ ${plan.priceUsdc}.00 USDC
+                        </p>
+                      )}
                       <p className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1 pt-1">
                         <Zap className="size-3.5 fill-amber-400 text-amber-500" />
                         {plan.monthlyPrompts} Consultas IA / Mês
@@ -361,13 +437,13 @@ export function Subscricoes() {
                     {/* Margem de Transparência Financeira */}
                     <div className="mt-2 rounded-lg bg-muted/60 p-3 text-[11px] space-y-1 border border-border/50">
                       <div className="flex items-center justify-between text-muted-foreground">
-                        <span>Custo API estimado (Gemini):</span>
-                        <span className="font-mono">${plan.estimatedApiCostUsd.toFixed(2)}</span>
+                        <span>Custo API estimado:</span>
+                        <span className="font-mono">{formatPrice(plan.estimatedApiCostUsd)}</span>
                       </div>
                       <div className="flex items-center justify-between font-bold text-foreground">
                         <span>Margem Bruta de Lucro:</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-mono">
-                          {plan.profitMarginPercent}% (${plan.grossProfitUsd.toFixed(2)})
+                          {plan.profitMarginPercent}% ({formatPrice(plan.grossProfitUsd)})
                         </span>
                       </div>
                     </div>
@@ -394,8 +470,8 @@ export function Subscricoes() {
                             : "bg-primary hover:bg-primary/90 text-primary-foreground"
                         }`}
                       >
-                        <BaseLogoSvg className="size-4" />
-                        <span>Subscrever com Base Pay</span>
+                        <Coins className="size-4" />
+                        <span>Subscrever ({formattedPlanPrice})</span>
                       </button>
                     )}
                   </div>
@@ -406,13 +482,13 @@ export function Subscricoes() {
         </Panel>
 
         {/* Secção Explicativa Base Pay Blockchain */}
-        <Panel titulo="Vantagens do Pagamento via Base Pay (USDC)">
+        <Panel titulo="Vantagens do Pagamento e Multimoeda (MZN, USDC, EUR, ZAR)">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 rounded-lg border border-border bg-card space-y-2">
               <div className="p-2 w-fit rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <BaseLogoSvg className="size-5" />
               </div>
-              <h5 className="font-bold text-sm text-foreground">Sem Comissões Bancárias</h5>
+              <h5 className="font-bold text-sm text-foreground">Sem Comissões Ocultas</h5>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Pagamentos diretos em USDC via Layer 2 Base com custos de transação insignificantes (&lt; $0.001).
               </p>
@@ -422,9 +498,9 @@ export function Subscricoes() {
               <div className="p-2 w-fit rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <Zap className="size-5" />
               </div>
-              <h5 className="font-bold text-sm text-foreground">Confirmação Instantânea</h5>
+              <h5 className="font-bold text-sm text-foreground">Moeda Local & M-Pesa</h5>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                A cota de Prompts IA é libertada imediatamente após o envio do pagamento na blockchain.
+                Total suporte para o Metical moçambicano (MZN) via M-Pesa com confirmação imediata.
               </p>
             </div>
 
@@ -442,9 +518,9 @@ export function Subscricoes() {
               <div className="p-2 w-fit rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                 <CreditCard className="size-5" />
               </div>
-              <h5 className="font-bold text-sm text-foreground">Flexibilidade Total</h5>
+              <h5 className="font-bold text-sm text-foreground">Flexibilidade Global</h5>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Suporte nativo a Base Account, MetaMask, Smart Wallets e cartões Visa / Mastercard.
+                Suporte nativo a Meticais (MZN), Dólares (USD), Euros (EUR), Rands (ZAR), Cartões Visa/Mastercard e Web3 Wallets.
               </p>
             </div>
           </div>
@@ -465,43 +541,71 @@ export function Subscricoes() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card font-medium">
-                <tr className="hover:bg-muted/40 transition">
-                  <td className="p-3">{new Date().toLocaleDateString("pt-PT")}</td>
-                  <td className="p-3 font-bold text-foreground">{subscription.planName}</td>
-                  <td className="p-3 font-mono font-bold text-foreground">
-                    ${activePlan?.priceUsdc || 0}.00 USDC
-                  </td>
-                  <td className="p-3 flex items-center gap-1.5">
-                    {subscription.paymentMethod === "Base Pay (USDC)" ? (
-                      <>
-                        <BaseLogoSvg className="size-3.5" />
-                        <span>Base Pay</span>
-                      </>
-                    ) : (
-                      <span>{subscription.paymentMethod}</span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    {subscription.lastTxHash ? (
-                      <a
-                        href={getBasescanUrl(subscription.lastTxHash)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-blue-600 hover:underline dark:text-blue-400 flex items-center gap-1"
-                      >
-                        <span>{subscription.lastTxHash.slice(0, 10)}...</span>
-                        <ExternalLink className="size-3" />
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground italic">Interno</span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[11px] font-bold">
-                      <CheckCircle2 className="size-3" /> Confirmado
-                    </span>
-                  </td>
-                </tr>
+                {history && history.length > 0 ? (
+                  history.map((item) => (
+                    <tr key={item.id} className="hover:bg-muted/40 transition">
+                      <td className="p-3 font-mono text-muted-foreground">
+                        {new Date(item.date).toLocaleDateString("pt-PT")}
+                      </td>
+                      <td className="p-3 font-bold text-foreground">{item.planName}</td>
+                      <td className="p-3 font-mono font-bold text-foreground">
+                        {item.priceFormatted || `$${item.priceUsdc}.00 USDC`}
+                      </td>
+                      <td className="p-3">
+                        {item.paymentMethod === "Crypto (Base Pay)" || item.paymentMethod === "Base Pay (USDC)" ? (
+                          <span className="inline-flex items-center gap-1.5 rounded bg-blue-500/10 text-blue-500 font-bold px-2 py-0.5 text-[11px] border border-blue-500/20">
+                            <BaseLogoSvg className="size-3" />
+                            <span>Crypto (Base Pay)</span>
+                          </span>
+                        ) : item.paymentMethod === "M-Pesa" ? (
+                          <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 text-[11px] border border-emerald-500/20">
+                            <Zap className="size-3" />
+                            <span>Vodacom M-Pesa</span>
+                          </span>
+                        ) : item.paymentMethod === "Card" ? (
+                          <span className="inline-flex items-center gap-1 rounded bg-primary/10 text-primary font-bold px-2 py-0.5 text-[11px] border border-primary/20">
+                            <CreditCard className="size-3" />
+                            <span>Cartão Bancário</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded bg-muted text-muted-foreground font-medium px-2 py-0.5 text-[11px]">
+                            <span>{item.paymentMethod}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {item.txHash && item.txHash.startsWith("0x") ? (
+                          <a
+                            href={getBasescanUrl(item.txHash)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-blue-600 hover:underline dark:text-blue-400 flex items-center gap-1"
+                          >
+                            <span>{item.txHash.slice(0, 10)}...</span>
+                            <ExternalLink className="size-3" />
+                          </a>
+                        ) : item.txHash ? (
+                          <span className="font-mono text-[11px] text-foreground font-semibold">
+                            {item.txHash}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground italic">Interno</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[11px] font-bold">
+                          <CheckCircle2 className="size-3" /> Confirmado
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                      Nenhum registo de subscrição encontrado.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useWeb3 } from "./web3-base";
+import {
+  type CurrencyCode,
+  formatUsdInCurrency,
+  convertUsdToCurrency,
+  MZN_USD_RATE,
+} from "./uni-data";
 
 export type SubscriptionTierId = "free" | "1usdc" | "5usdc" | "10usdc";
 
@@ -28,7 +34,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       "50 Consultas / Prompts IA por mês",
       "Acesso ao Orientador de Propinas & Prazos",
       "Suporte a Português e Inglês",
-      "Pagamento instantâneo via Base Pay (USDC)",
+      "Pagamento instantâneo via Base Pay, M-Pesa ou Cartão",
     ],
   },
   {
@@ -44,7 +50,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       "300 Consultas / Prompts IA por mês",
       "Simulações ilimitadas de planos de pagamento",
       "Acesso prioritário a respostas complexas",
-      "Suporte a Base Sepolia e Base Mainnet",
+      "Suporte a Base Sepolia, M-Pesa e Cartões",
       "Relatórios financeiros em PDF e comprovativos",
     ],
   },
@@ -66,6 +72,26 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
 ];
 
+export type SubscriptionPaymentMethod =
+  | "Crypto (Base Pay)"
+  | "Card"
+  | "M-Pesa"
+  | "Base Pay (USDC)"
+  | "Grátis";
+
+export interface SubscriptionHistoryItem {
+  id: string;
+  planId: SubscriptionTierId;
+  planName: string;
+  priceUsdc: number;
+  priceFormatted?: string;
+  currency?: CurrencyCode;
+  paymentMethod: SubscriptionPaymentMethod;
+  network?: string;
+  txHash?: string;
+  date: string;
+}
+
 export interface UserSubscription {
   tierId: SubscriptionTierId;
   planName: string;
@@ -73,23 +99,31 @@ export interface UserSubscription {
   totalPromptsQuota: number;
   promptsUsed: number;
   activeUntil: string | null; // ISO Date string
-  paymentMethod: "Base Pay (USDC)" | "Card" | "Grátis";
+  paymentMethod: SubscriptionPaymentMethod;
   networkUsed?: "Base Mainnet" | "Base Sepolia";
   lastTxHash?: string;
+  currency?: CurrencyCode;
 }
 
 interface SubscriptionContextType {
   subscription: UserSubscription;
+  history: SubscriptionHistoryItem[];
   isModalOpen: boolean;
   openModal: (selectedPlanId?: SubscriptionTierId) => void;
   closeModal: () => void;
   selectedPlanForModal: SubscriptionTierId;
   setSelectedPlanForModal: (planId: SubscriptionTierId) => void;
+  selectedCurrency: CurrencyCode;
+  setSelectedCurrency: (currency: CurrencyCode) => void;
+  formatPrice: (amountUsd: number, overrideCurrency?: CurrencyCode) => string;
+  getPriceInCurrency: (amountUsd: number, overrideCurrency?: CurrencyCode) => number;
   consumePrompt: () => boolean;
   subscribeToPlan: (params: {
     planId: SubscriptionTierId;
-    paymentMethod: "Base Pay (USDC)" | "Card";
-    network: "Base Mainnet" | "Base Sepolia";
+    paymentMethod: SubscriptionPaymentMethod;
+    currency?: CurrencyCode;
+    priceFormatted?: string;
+    network?: "Base Mainnet" | "Base Sepolia";
     txHash?: string;
   }) => void;
 }
@@ -104,18 +138,59 @@ const DEFAULT_SUBSCRIPTION: UserSubscription = {
   paymentMethod: "Grátis",
 };
 
+const DEFAULT_HISTORY: SubscriptionHistoryItem[] = [
+  {
+    id: "SUB-HIST-1",
+    planId: "free",
+    planName: "Plano Gratuito Inicial",
+    priceUsdc: 0,
+    priceFormatted: "Grátis",
+    currency: "MZN",
+    paymentMethod: "Grátis",
+    date: new Date().toISOString(),
+  },
+];
+
 const SubscriptionContext = createContext<SubscriptionContextType>({
   subscription: DEFAULT_SUBSCRIPTION,
+  history: DEFAULT_HISTORY,
   isModalOpen: false,
   openModal: () => {},
   closeModal: () => {},
   selectedPlanForModal: "5usdc",
   setSelectedPlanForModal: () => {},
+  selectedCurrency: "MZN",
+  setSelectedCurrency: () => {},
+  formatPrice: () => "",
+  getPriceInCurrency: () => 0,
   consumePrompt: () => true,
   subscribeToPlan: () => {},
 });
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
+  const [selectedCurrency, setSelectedCurrencyState] = useState<CurrencyCode>(() => {
+    const saved = localStorage.getItem("ul-subscription-currency");
+    if (saved && ["MZN", "USD", "EUR", "ZAR"].includes(saved)) {
+      return saved as CurrencyCode;
+    }
+    return "MZN"; // Default to Mozambique Metical as requested
+  });
+
+  const setSelectedCurrency = (curr: CurrencyCode) => {
+    setSelectedCurrencyState(curr);
+    localStorage.setItem("ul-subscription-currency", curr);
+  };
+
+  const formatPrice = (amountUsd: number, overrideCurrency?: CurrencyCode) => {
+    const curr = overrideCurrency || selectedCurrency;
+    return formatUsdInCurrency(amountUsd, curr);
+  };
+
+  const getPriceInCurrency = (amountUsd: number, overrideCurrency?: CurrencyCode) => {
+    const curr = overrideCurrency || selectedCurrency;
+    return convertUsdToCurrency(amountUsd, curr);
+  };
+
   const [subscription, setSubscription] = useState<UserSubscription>(() => {
     const saved = localStorage.getItem("ul-ai-subscription");
     if (saved) {
@@ -128,12 +203,28 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     return DEFAULT_SUBSCRIPTION;
   });
 
+  const [history, setHistory] = useState<SubscriptionHistoryItem[]>(() => {
+    const saved = localStorage.getItem("ul-ai-subscription-history");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return DEFAULT_HISTORY;
+      }
+    }
+    return DEFAULT_HISTORY;
+  });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlanForModal, setSelectedPlanForModal] = useState<SubscriptionTierId>("5usdc");
 
   useEffect(() => {
     localStorage.setItem("ul-ai-subscription", JSON.stringify(subscription));
   }, [subscription]);
+
+  useEffect(() => {
+    localStorage.setItem("ul-ai-subscription-history", JSON.stringify(history));
+  }, [history]);
 
   const openModal = (planId?: SubscriptionTierId) => {
     if (planId) setSelectedPlanForModal(planId);
@@ -161,18 +252,33 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const subscribeToPlan = ({
     planId,
     paymentMethod,
+    currency,
+    priceFormatted,
     network,
     txHash,
   }: {
     planId: SubscriptionTierId;
-    paymentMethod: "Base Pay (USDC)" | "Card";
-    network: "Base Mainnet" | "Base Sepolia";
+    paymentMethod: SubscriptionPaymentMethod;
+    currency?: CurrencyCode;
+    priceFormatted?: string;
+    network?: "Base Mainnet" | "Base Sepolia";
     txHash?: string;
   }) => {
     const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId) || SUBSCRIPTION_PLANS[1];
 
     const nextMonthDate = new Date();
     nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+
+    const generatedHash =
+      txHash ||
+      (paymentMethod === "Crypto (Base Pay)" || paymentMethod === "Base Pay (USDC)"
+        ? `0x${Array.from({ length: 32 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0")).join("")}`
+        : paymentMethod === "M-Pesa"
+        ? `MP260811.${Math.floor(1000 + Math.random() * 9000)}`
+        : `CARD-AUTH-${Math.floor(100000 + Math.random() * 900000)}`);
+
+    const activeCurr = currency || selectedCurrency;
+    const formattedPrice = priceFormatted || formatPrice(plan.priceUsdc, activeCurr);
 
     const updated: UserSubscription = {
       tierId: plan.id,
@@ -182,11 +288,45 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       promptsUsed: 0,
       activeUntil: nextMonthDate.toISOString(),
       paymentMethod,
-      networkUsed: network,
-      lastTxHash: txHash || `0x${Array.from({ length: 32 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0")).join("")}`,
+      networkUsed: network || "Base Mainnet",
+      lastTxHash: generatedHash,
+    };
+
+    const newHistoryItem: SubscriptionHistoryItem = {
+      id: `SUB-TX-${Date.now()}`,
+      planId: plan.id,
+      planName: plan.name,
+      priceUsdc: plan.priceUsdc,
+      priceFormatted: formattedPrice,
+      currency: activeCurr,
+      paymentMethod,
+      network: network || "Base Mainnet",
+      txHash: generatedHash,
+      date: new Date().toISOString(),
     };
 
     setSubscription(updated);
+    setHistory((prev) => [newHistoryItem, ...prev]);
+
+    // Also persist activity / payment in backend if available
+    try {
+      fetch("/api/payments/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: "SUBSCRIPTION_USER",
+          feeTitle: `Subscrição IA: ${plan.name} (${formattedPrice})`,
+          amount: Math.round(plan.priceUsdc * MZN_USD_RATE),
+          amountFormatted: formattedPrice,
+          currency: activeCurr,
+          method: paymentMethod,
+          reference: generatedHash,
+        }),
+      }).catch(() => {});
+    } catch (e) {
+      console.warn("Could not log subscription payment to server:", e);
+    }
+
     closeModal();
   };
 
@@ -194,11 +334,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     <SubscriptionContext.Provider
       value={{
         subscription,
+        history,
         isModalOpen,
         openModal,
         closeModal,
         selectedPlanForModal,
         setSelectedPlanForModal,
+        selectedCurrency,
+        setSelectedCurrency,
+        formatPrice,
+        getPriceInCurrency,
         consumePrompt,
         subscribeToPlan,
       }}

@@ -7,8 +7,9 @@ import { useI18n } from "@/lib/i18n";
 import { PayInvoiceModal } from "@/components/PayInvoiceModal";
 import { SmsNotificationModal } from "@/components/SmsNotificationModal";
 import { PaymentCredentialsModal } from "@/components/PaymentCredentialsModal";
+import { DebitoPayCheckoutModal } from "@/components/DebitoPayCheckoutModal";
 import financeImg from "@/assets/images/financial_services_1786439400478.jpg";
-import { DollarSign, Download, CreditCard, Bell, Key } from "lucide-react";
+import { DollarSign, Download, CreditCard, Bell, Key, Zap } from "lucide-react";
 
 const FILTROS = ["todos", "pago", "pendente", "vencido"] as const;
 
@@ -18,6 +19,7 @@ export function Pagamentos() {
 
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number]>("todos");
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [showDebitoModal, setShowDebitoModal] = useState(false);
   const [selectedPayTarget, setSelectedPayTarget] = useState<{
     student: Student;
     fee: Fee;
@@ -43,6 +45,27 @@ export function Pagamentos() {
     setShowSmsModal(true);
   };
 
+  const firstStudent: Student = students[0] || {
+    id: "EST-2024-001",
+    nome: "Leonardo Matsinhe",
+    docId: "110100452930B",
+    tipoDocumento: "BI",
+    curso: "Engenharia Informática",
+    ano: 3,
+    email: "leonardo.m@ul.ac.mz",
+    nacionalidade: "Moçambique",
+    isInternational: false,
+  };
+
+  const firstFee: Fee = fees[0] || {
+    id: "FEE-001",
+    tipo: "propina",
+    designacao: "Propina Mensal - Informática",
+    curso: "Engenharia Informática",
+    valor: 4500,
+    vencimento: "2026-08-30",
+  };
+
   return (
     <Shell
       titulo="Estado dos Pagamentos"
@@ -66,13 +89,21 @@ export function Pagamentos() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowDebitoModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-sm bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 text-xs font-bold text-purple-600 dark:text-purple-300 hover:bg-purple-500/25 transition cursor-pointer shadow-xs"
+          >
+            <Zap className="size-3.5 text-purple-500" />
+            <span>Debito Pay Sandbox & HMAC</span>
+          </button>
+
           <button
             onClick={() => setShowCredentialsModal(true)}
             className="inline-flex items-center gap-1.5 rounded-sm bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition cursor-pointer"
           >
             <Key className="size-3.5" />
-            <span>Configurar M-Pesa & Cartões Moçambique</span>
+            <span>Chaves de API & Gateways</span>
           </button>
 
           <button
@@ -174,6 +205,16 @@ export function Pagamentos() {
       {/* Embedded Credentials Guide Modal */}
       {showCredentialsModal && (
         <PaymentCredentialsModal onClose={() => setShowCredentialsModal(false)} />
+      )}
+
+      {/* Embedded Debito Pay Sandbox Checkout Modal */}
+      {showDebitoModal && (
+        <DebitoPayCheckoutModal
+          student={firstStudent}
+          fee={firstFee}
+          defaultAmount={firstFee.valor}
+          onClose={() => setShowDebitoModal(false)}
+        />
       )}
 
       {/* Embedded SMS Modal if triggered */}

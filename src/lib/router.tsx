@@ -51,6 +51,7 @@ export function Link({
   className,
   activeClassName,
   exact = false,
+  onClick,
 }: {
   to: string;
   children: ReactNode;
@@ -58,6 +59,7 @@ export function Link({
   activeClassName?: string;
   exact?: boolean;
   key?: string | number;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const { path, navigate } = useRouter();
   const isActive = exact ? path === to : path === to || (to !== "/" && path.startsWith(to));
@@ -67,6 +69,9 @@ export function Link({
       href={to}
       onClick={(e) => {
         e.preventDefault();
+        if (onClick) {
+          onClick(e);
+        }
         navigate(to);
       }}
       className={`${className || ""} ${isActive && activeClassName ? activeClassName : ""}`}

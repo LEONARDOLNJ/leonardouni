@@ -7,6 +7,12 @@ import {
 import { useWeb3, BASE_SEPOLIA_CHAIN_ID } from "@/lib/web3-base";
 import { useI18n } from "@/lib/i18n";
 import {
+  type CurrencyCode,
+  MZN_USD_RATE,
+  formatCurrency,
+  convertUsdToCurrency,
+} from "@/lib/uni-data";
+import {
   X,
   Sparkles,
   CheckCircle2,
@@ -20,6 +26,7 @@ import {
   ArrowRight,
   Info,
   Check,
+  DollarSign,
 } from "lucide-react";
 
 export function SubscriptionModal() {
@@ -31,6 +38,10 @@ export function SubscriptionModal() {
     setSelectedPlanForModal,
     subscribeToPlan,
     subscription,
+    selectedCurrency,
+    setSelectedCurrency,
+    formatPrice,
+    getPriceInCurrency,
   } = useSubscription();
 
   const {
@@ -43,7 +54,7 @@ export function SubscriptionModal() {
     balanceUsdc,
   } = useWeb3();
 
-  const [paymentMethod, setPaymentMethod] = useState<"Base Pay (USDC)" | "M-Pesa" | "Card">("Base Pay (USDC)");
+  const [paymentMethod, setPaymentMethod] = useState<"Crypto (Base Pay)" | "M-Pesa" | "Card">("Crypto (Base Pay)");
   const [networkChoice, setNetworkChoice] = useState<"Base Sepolia" | "Base Mainnet">("Base Sepolia");
   const [payTokenType, setPayTokenType] = useState<"ETH" | "USDC">("ETH");
   const [phoneNumber, setPhoneNumber] = useState("+258 84 ");
@@ -55,6 +66,9 @@ export function SubscriptionModal() {
     planName: string;
     prompts: number;
     amountUsdc: number;
+    priceFormatted: string;
+    currency: CurrencyCode;
+    method: string;
   } | null>(null);
 
   if (!isModalOpen) return null;
@@ -62,15 +76,20 @@ export function SubscriptionModal() {
   const activePlan =
     SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlanForModal) || SUBSCRIPTION_PLANS[1];
 
+  const planPriceFormatted = formatPrice(activePlan.priceUsdc);
+  const planPriceMzn = Math.round(activePlan.priceUsdc * MZN_USD_RATE);
+
   const handleConfirmSubscription = async () => {
     setProcessing(true);
     setSubError(null);
 
-    if (paymentMethod === "Base Pay (USDC)") {
+    const priceFormatted = formatPrice(activePlan.priceUsdc);
+
+    if (paymentMethod === "Crypto (Base Pay)") {
       const result = await payWithBase({
-        amountMzn: activePlan.priceUsdc * 63.8, // convert USD to MZN equivalent
+        amountMzn: planPriceMzn,
         amountUsdc: activePlan.priceUsdc,
-        feeTitle: `Subscrição IA: ${activePlan.name}`,
+        feeTitle: `Subscrição IA: ${activePlan.name} (${priceFormatted})`,
         studentId: "SUBSCRIPTION",
         payTokenType,
       });
@@ -79,7 +98,9 @@ export function SubscriptionModal() {
         const hash = result.txHash || `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
         subscribeToPlan({
           planId: activePlan.id,
-          paymentMethod: "Base Pay (USDC)",
+          paymentMethod: "Crypto (Base Pay)",
+          currency: selectedCurrency,
+          priceFormatted,
           network: networkChoice,
           txHash: hash,
         });
@@ -89,6 +110,9 @@ export function SubscriptionModal() {
           planName: activePlan.name,
           prompts: activePlan.monthlyPrompts,
           amountUsdc: activePlan.priceUsdc,
+          priceFormatted,
+          currency: selectedCurrency,
+          method: "Crypto (Base Pay)",
         });
       } else {
         setSubError(result.error || "Falha na transacção com Base Pay");
@@ -104,10 +128,11 @@ export function SubscriptionModal() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phoneNumber,
-            amount: Math.round(activePlan.priceUsdc * 63.8),
+            amount: planPriceMzn,
+            currency: "MZN",
             reference: `SUB-${activePlan.id}`,
             studentId: "SUBSCRIPTION",
-            feeTitle: `Subscrição IA: ${activePlan.name}`,
+            feeTitle: `Subscrição IA: ${activePlan.name} (${priceFormatted})`,
           }),
         });
       } catch (err) {
@@ -118,7 +143,9 @@ export function SubscriptionModal() {
         const mpesaHash = `MP260811.${Math.floor(1000 + Math.random() * 9000)}`;
         subscribeToPlan({
           planId: activePlan.id,
-          paymentMethod: "Base Pay (USDC)", // store inside subscription
+          paymentMethod: "M-Pesa",
+          currency: selectedCurrency,
+          priceFormatted,
           network: "Base Mainnet",
           txHash: mpesaHash,
         });
@@ -128,6 +155,9 @@ export function SubscriptionModal() {
           planName: activePlan.name,
           prompts: activePlan.monthlyPrompts,
           amountUsdc: activePlan.priceUsdc,
+          priceFormatted,
+          currency: selectedCurrency,
+          method: "M-Pesa",
         });
 
         setProcessing(false);
@@ -135,12 +165,31 @@ export function SubscriptionModal() {
       return;
     }
 
-    // Card Payment Simulation
+    // Card Payment Simulation (DPO / Gateway)
+    try {
+      await fetch("/api/payments/card", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardNumber: cardNumber || "5436 8862 6984 8367",
+          amount: selectedCurrency === "USD" ? activePlan.priceUsdc : planPriceMzn,
+          currency: selectedCurrency,
+          studentId: "SUBSCRIPTION_USER",
+          feeTitle: `Subscrição IA: ${activePlan.name} (${priceFormatted})`,
+          email: "student@universidade.ac.mz",
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
     setTimeout(() => {
-      const cardHash = `card_tx_${Date.now()}`;
+      const cardHash = `CARD-AUTH-${Date.now()}`;
       subscribeToPlan({
         planId: activePlan.id,
         paymentMethod: "Card",
+        currency: selectedCurrency,
+        priceFormatted,
         network: "Base Mainnet",
         txHash: cardHash,
       });
@@ -150,6 +199,9 @@ export function SubscriptionModal() {
         planName: activePlan.name,
         prompts: activePlan.monthlyPrompts,
         amountUsdc: activePlan.priceUsdc,
+        priceFormatted,
+        currency: selectedCurrency,
+        method: "Card",
       });
 
       setProcessing(false);
@@ -168,23 +220,57 @@ export function SubscriptionModal() {
         </button>
 
         {/* Modal Header */}
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-400">
-            <Sparkles className="size-3.5" />
-            <span>{t("Planos de Subscrição do Orientador IA")}</span>
-            <span className="rounded bg-blue-600 px-1.5 py-0.2 text-[10px] text-white uppercase font-bold">
-              Base Pay (USDC)
-            </span>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-400">
+              <Sparkles className="size-3.5" />
+              <span>{t("Planos de Subscrição do Orientador IA")}</span>
+              <span className="rounded bg-blue-600 px-1.5 py-0.2 text-[10px] text-white uppercase font-bold">
+                Base Pay (USDC)
+              </span>
+            </div>
+
+            {/* Currency Selector Pill */}
+            <div className="flex items-center gap-1 bg-muted p-1 rounded-md border border-border">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase px-1.5 flex items-center gap-1">
+                <DollarSign className="size-3" />
+                Moeda:
+              </span>
+              {(
+                [
+                  { code: "MZN", label: "🇲🇿 MZN (MT)", title: "Metical Moçambicano" },
+                  { code: "USD", label: "🇺🇸 USD ($)", title: "Dólar Americano / USDC" },
+                  { code: "EUR", label: "🇪🇺 EUR (€)", title: "Euro Europeu" },
+                  { code: "ZAR", label: "🇿🇦 ZAR (R)", title: "Rand Sul-Africano" },
+                ] as const
+              ).map((curr) => (
+                <button
+                  key={curr.code}
+                  type="button"
+                  onClick={() => setSelectedCurrency(curr.code)}
+                  title={curr.title}
+                  className={`px-2 py-1 text-[11px] font-bold rounded transition cursor-pointer ${
+                    selectedCurrency === curr.code
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  }`}
+                >
+                  {curr.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <h2 className="font-display text-2xl font-bold text-foreground">
-            {t("Escolha o seu Plano de Consultas IA")}
-          </h2>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {t(
-              "Subscreva com dólar digital (USDC) na rede Base L2 ou com cartão bancário para ter acesso contínuo a orientações académicas e financeiras personalizadas.",
-            )}
-          </p>
+          <div>
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              {t("Escolha o seu Plano de Consultas IA")}
+            </h2>
+            <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+              {t(
+                "Subscreva com moeda local em Meticais (MZN via M-Pesa/Cartão), Dólares (USDC via Base Pay), Euros ou Rands para acesso contínuo a orientações académicas e financeiras personalizadas.",
+              )}
+            </p>
+          </div>
         </div>
 
         {/* Success View */}
@@ -210,13 +296,17 @@ export function SubscriptionModal() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("Valor Pago")}:</span>
+                <span className="font-bold text-emerald-400">{successReceipt.priceFormatted}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Equivalente Digital:</span>
                 <span className="font-bold text-blue-400">${successReceipt.amountUsdc}.00 USDC</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("Método")}:</span>
                 <span className="font-bold text-foreground">{paymentMethod}</span>
               </div>
-              {paymentMethod === "Base Pay (USDC)" && (
+              {paymentMethod === "Crypto (Base Pay)" && (
                 <div className="pt-2 border-t border-border space-y-1">
                   <span className="text-[10px] text-muted-foreground block">
                     Recebedor: <strong className="text-amber-300 font-mono">{receivingAddress}</strong>
@@ -238,7 +328,7 @@ export function SubscriptionModal() {
 
             <button
               onClick={closeModal}
-              className="w-full max-w-md mx-auto rounded-sm bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 text-xs transition"
+              className="w-full max-w-md mx-auto rounded-sm bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 text-xs transition cursor-pointer"
             >
               {t("Concluído e Voltar ao Orientador")}
             </button>
@@ -247,13 +337,20 @@ export function SubscriptionModal() {
           <>
             {/* Step 1: Tier Selection */}
             <div className="space-y-3">
-              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                1. {t("Selecione a Subscrição Mensal em USDC")}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  1. {t("Selecione o Plano")} ({selectedCurrency})
+                </label>
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  Preços convertidos em tempo real para <strong>{selectedCurrency}</strong>
+                </span>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {SUBSCRIPTION_PLANS.map((plan) => {
                   const isSelected = selectedPlanForModal === plan.id;
+                  const priceInCurrent = formatPrice(plan.priceUsdc);
+
                   return (
                     <div
                       key={plan.id}
@@ -284,13 +381,20 @@ export function SubscriptionModal() {
                           </div>
                         </div>
 
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-black font-display text-blue-500">
-                            ${plan.priceUsdc}
-                          </span>
-                          <span className="text-xs font-bold text-muted-foreground">
-                            USDC / {t("mês")}
-                          </span>
+                        <div className="space-y-0.5">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xl sm:text-2xl font-black font-display text-blue-500">
+                              {priceInCurrent}
+                            </span>
+                            <span className="text-xs font-bold text-muted-foreground">
+                              / {t("mês")}
+                            </span>
+                          </div>
+                          {selectedCurrency !== "USD" && (
+                            <span className="text-[10px] text-muted-foreground font-mono block">
+                              ≈ ${plan.priceUsdc}.00 USDC
+                            </span>
+                          )}
                         </div>
 
                         <div className="rounded bg-muted/60 px-2 py-1 text-[11px] font-semibold text-foreground flex items-center gap-1.5">
@@ -328,22 +432,28 @@ export function SubscriptionModal() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] font-mono">
                 <div className="bg-background border border-border p-2 rounded">
                   <span className="text-muted-foreground block text-[10px]">{t("Custo por Prompt")}:</span>
-                  <span className="font-bold text-foreground">~$0.002 USD</span>
+                  <span className="font-bold text-foreground">
+                    ~{formatPrice(0.002)}
+                  </span>
                 </div>
 
                 <div className="bg-background border border-border p-2 rounded">
                   <span className="text-muted-foreground block text-[10px]">{t("Custo Estimado API")}:</span>
-                  <span className="font-bold text-amber-400">${activePlan.estimatedApiCostUsd.toFixed(2)} USD</span>
+                  <span className="font-bold text-amber-400">
+                    {formatPrice(activePlan.estimatedApiCostUsd)}
+                  </span>
                 </div>
 
                 <div className="bg-background border border-border p-2 rounded">
                   <span className="text-muted-foreground block text-[10px]">{t("Lucro Bruto/Mês")}:</span>
-                  <span className="font-bold text-emerald-400">${activePlan.grossProfitUsd.toFixed(2)} USDC</span>
+                  <span className="font-bold text-emerald-400">
+                    {formatPrice(activePlan.grossProfitUsd)}
+                  </span>
                 </div>
 
                 <div className="bg-background border border-border p-2 rounded">
-                  <span className="text-muted-foreground block text-[10px]">{t("Rede Blockchain")}:</span>
-                  <span className="font-bold text-blue-400">Base L2 (Instantâneo)</span>
+                  <span className="text-muted-foreground block text-[10px]">{t("Moeda Activa")}:</span>
+                  <span className="font-bold text-blue-400">{selectedCurrency}</span>
                 </div>
               </div>
             </div>
@@ -357,10 +467,48 @@ export function SubscriptionModal() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
+                  onClick={() => setPaymentMethod("Crypto (Base Pay)")}
+                  className={`flex items-center justify-between rounded-sm border p-3 text-left transition cursor-pointer ${
+                    paymentMethod === "Crypto (Base Pay)"
+                      ? "border-blue-500 bg-blue-500/15 text-blue-400 font-bold shadow-xs ring-1 ring-blue-500"
+                      : "border-border bg-card text-muted-foreground hover:border-border/80"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Coins className="size-5 text-blue-400" />
+                    <div>
+                      <span className="text-xs block font-bold text-foreground">Crypto (Base Pay)</span>
+                      <span className="text-[10px] text-muted-foreground">Base Sepolia L2 (ETH/USDC)</span>
+                    </div>
+                  </div>
+                  {paymentMethod === "Crypto (Base Pay)" && <CheckCircle2 className="size-4 text-blue-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("Card")}
+                  className={`flex items-center justify-between rounded-sm border p-3 text-left transition cursor-pointer ${
+                    paymentMethod === "Card"
+                      ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary"
+                      : "border-border bg-card text-muted-foreground hover:border-border/80"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="size-5 text-primary" />
+                    <div>
+                      <span className="text-xs block font-bold text-foreground">Cartão Bancário</span>
+                      <span className="text-[10px] text-muted-foreground">Visa, Mastercard ({selectedCurrency})</span>
+                    </div>
+                  </div>
+                  {paymentMethod === "Card" && <CheckCircle2 className="size-4 text-primary" />}
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setPaymentMethod("M-Pesa")}
-                  className={`flex items-center justify-between rounded-sm border p-3 text-left transition ${
+                  className={`flex items-center justify-between rounded-sm border p-3 text-left transition cursor-pointer ${
                     paymentMethod === "M-Pesa"
-                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs"
+                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs ring-1 ring-emerald-500"
                       : "border-border bg-card text-muted-foreground hover:border-border/80"
                   }`}
                 >
@@ -368,72 +516,15 @@ export function SubscriptionModal() {
                     <Zap className="size-5 text-emerald-500" />
                     <div>
                       <span className="text-xs block font-bold text-foreground">Vodacom M-Pesa</span>
-                      <span className="text-[10px] text-muted-foreground">Moçambique (MZN)</span>
+                      <span className="text-[10px] text-muted-foreground">Moçambique C2B (MZN)</span>
                     </div>
                   </div>
                   {paymentMethod === "M-Pesa" && <CheckCircle2 className="size-4 text-emerald-500" />}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("Base Pay (USDC)")}
-                  className={`flex items-center justify-between rounded-sm border p-3 text-left transition ${
-                    paymentMethod === "Base Pay (USDC)"
-                      ? "border-blue-500 bg-blue-500/15 text-blue-400 font-bold shadow-xs"
-                      : "border-border bg-card text-muted-foreground hover:border-border/80"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Coins className="size-5 text-blue-400" />
-                    <div>
-                      <span className="text-xs block font-bold text-foreground">Base Pay (USDC)</span>
-                      <span className="text-[10px] text-muted-foreground">Cripto em Base L2</span>
-                    </div>
-                  </div>
-                  {paymentMethod === "Base Pay (USDC)" && <CheckCircle2 className="size-4 text-blue-400" />}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("Card")}
-                  className={`flex items-center justify-between rounded-sm border p-3 text-left transition ${
-                    paymentMethod === "Card"
-                      ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
-                      : "border-border bg-card text-muted-foreground hover:border-border/80"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="size-5" />
-                    <div>
-                      <span className="text-xs block font-bold text-foreground">Cartão Débito/Crédito</span>
-                      <span className="text-[10px] text-muted-foreground">Visa, Mastercard</span>
-                    </div>
-                  </div>
-                  {paymentMethod === "Card" && <CheckCircle2 className="size-4 text-primary" />}
-                </button>
               </div>
 
-              {/* M-Pesa Input */}
-              {paymentMethod === "M-Pesa" && (
-                <div className="rounded-sm border border-emerald-500/30 bg-emerald-950/10 p-3 space-y-2 text-xs">
-                  <label className="block font-semibold text-foreground">
-                    Número M-Pesa Moçambique (+258)
-                  </label>
-                  <input
-                    type="text"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+258 84 000 0000"
-                    className="w-full rounded border border-input bg-card px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                  <span className="text-[10px] text-muted-foreground block">
-                    Valor equivalente a cobrar: <strong className="text-foreground">{Math.round(activePlan.priceUsdc * 63.8)} MZN</strong> via notificação C2B no telemóvel.
-                  </span>
-                </div>
-              )}
-
-              {/* Base Pay Network Info */}
-              {paymentMethod === "Base Pay (USDC)" && (
+              {/* Crypto (Base Pay) Network Info */}
+              {paymentMethod === "Crypto (Base Pay)" && (
                 <div className="rounded-sm border border-blue-500/30 bg-blue-950/20 p-4 space-y-3 text-xs">
                   <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
                     <div className="flex items-center gap-1.5 font-bold text-blue-300">
@@ -463,7 +554,7 @@ export function SubscriptionModal() {
                       <button
                         type="button"
                         onClick={() => setPayTokenType("ETH")}
-                        className={`px-2.5 py-1 text-[10px] font-bold rounded ${
+                        className={`px-2.5 py-1 text-[10px] font-bold rounded cursor-pointer ${
                           payTokenType === "ETH"
                             ? "bg-blue-600 text-white"
                             : "bg-background text-muted-foreground border border-border"
@@ -474,7 +565,7 @@ export function SubscriptionModal() {
                       <button
                         type="button"
                         onClick={() => setPayTokenType("USDC")}
-                        className={`px-2.5 py-1 text-[10px] font-bold rounded ${
+                        className={`px-2.5 py-1 text-[10px] font-bold rounded cursor-pointer ${
                           payTokenType === "USDC"
                             ? "bg-blue-600 text-white"
                             : "bg-background text-muted-foreground border border-border"
@@ -492,14 +583,14 @@ export function SubscriptionModal() {
                         <button
                           type="button"
                           onClick={() => signInWithBase()}
-                          className="rounded bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-500"
+                          className="rounded bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-500 cursor-pointer"
                         >
                           Sign in with Base
                         </button>
                         <button
                           type="button"
                           onClick={() => signInWithEthereum()}
-                          className="rounded bg-amber-600/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-500"
+                          className="rounded bg-amber-600/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-500 cursor-pointer"
                         >
                           MetaMask
                         </button>
@@ -524,17 +615,60 @@ export function SubscriptionModal() {
                 </div>
               )}
 
+              {/* Card Input */}
               {paymentMethod === "Card" && (
-                <div className="rounded-sm border border-border bg-background p-3 space-y-2 text-xs">
-                  <label className="block font-semibold text-foreground">{t("Número do Cartão")}</label>
+                <div className="rounded-sm border border-border bg-background p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-foreground">{t("Número do Cartão de Débito/Crédito")}</label>
+                    <span className="text-[10px] font-mono text-muted-foreground">DPO / Debito Pay ({selectedCurrency})</span>
+                  </div>
                   <input
                     type="text"
                     value={cardNumber}
                     onChange={(e) => setCardNumber(e.target.value)}
+                    placeholder="5436 8862 6984 8367"
                     className="w-full rounded border border-input bg-card px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <span className="block text-[10px] text-muted-foreground">Validade (MM/AA):</span>
+                      <input
+                        type="text"
+                        defaultValue="12/28"
+                        className="w-full rounded border border-input bg-card px-2 py-1 text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-muted-foreground">CVV:</span>
+                      <input
+                        type="password"
+                        defaultValue="123"
+                        maxLength={4}
+                        className="w-full rounded border border-input bg-card px-2 py-1 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground block pt-1">
+                    {t("Valor total a cobrar no cartão:")} <strong className="text-foreground font-bold">{planPriceFormatted}</strong> ({selectedCurrency}).
+                  </span>
+                </div>
+              )}
+
+              {/* M-Pesa Input */}
+              {paymentMethod === "M-Pesa" && (
+                <div className="rounded-sm border border-emerald-500/30 bg-emerald-950/10 p-3.5 space-y-2 text-xs">
+                  <label className="block font-semibold text-foreground">
+                    Número M-Pesa Moçambique (+258)
+                  </label>
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+258 84 000 0000"
+                    className="w-full rounded border border-input bg-card px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
                   <span className="text-[10px] text-muted-foreground block">
-                    {t("Cobrança mensal recorrente. Pode cancelar a qualquer momento.")}
+                    Valor a debitar em moeda local: <strong className="text-foreground font-bold">{planPriceMzn} MZN</strong> ({formatCurrency(planPriceMzn, "MZN")}) via pedido C2B STK Push para autorização no seu telemóvel.
                   </span>
                 </div>
               )}
@@ -546,7 +680,7 @@ export function SubscriptionModal() {
                 type="button"
                 onClick={closeModal}
                 disabled={processing}
-                className="rounded-sm border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                className="rounded-sm border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 {t("Cancelar")}
               </button>
@@ -555,15 +689,37 @@ export function SubscriptionModal() {
                 type="button"
                 onClick={handleConfirmSubscription}
                 disabled={processing}
-                className="inline-flex items-center gap-2 rounded-sm bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 text-xs transition shadow-md disabled:opacity-50 cursor-pointer"
+                className={`inline-flex items-center gap-2 rounded-sm font-bold px-5 py-2.5 text-xs transition shadow-md disabled:opacity-50 cursor-pointer text-white ${
+                  paymentMethod === "M-Pesa"
+                    ? "bg-emerald-600 hover:bg-emerald-500"
+                    : paymentMethod === "Card"
+                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    : "bg-blue-600 hover:bg-blue-500"
+                }`}
               >
                 {processing ? (
-                  <span>{t("A processar pagamento Base Pay...")}</span>
+                  <span>
+                    {paymentMethod === "M-Pesa"
+                      ? "A processar pedido M-Pesa C2B..."
+                      : paymentMethod === "Card"
+                      ? "A autorizar cartão bancário..."
+                      : t("A processar pagamento Base Pay...")}
+                  </span>
                 ) : (
                   <>
-                    <Coins className="size-4" />
+                    {paymentMethod === "M-Pesa" ? (
+                      <Zap className="size-4" />
+                    ) : paymentMethod === "Card" ? (
+                      <CreditCard className="size-4" />
+                    ) : (
+                      <Coins className="size-4" />
+                    )}
                     <span>
-                      {t("Pagar")} ${activePlan.priceUsdc}.00 USDC / {t("mês")}
+                      {paymentMethod === "M-Pesa"
+                        ? `Subscrever com M-Pesa (${planPriceMzn} MZN / mês)`
+                        : paymentMethod === "Card"
+                        ? `Subscrever com Cartão (${planPriceFormatted} / mês)`
+                        : `Subscrever com Base Pay ($${activePlan.priceUsdc}.00 USDC · ${planPriceFormatted})`}
                     </span>
                     <ArrowRight className="size-4" />
                   </>

@@ -25,7 +25,7 @@ function AppRoutes() {
   if (path === "/login") {
     return <Login />;
   }
-  if (path === "/portal") {
+  if (path === "/portal" || path === "/perfil" || path === "/profile") {
     return <StudentPortal />;
   }
   if (path === "/analytics") {

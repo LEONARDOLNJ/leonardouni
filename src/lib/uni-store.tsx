@@ -34,6 +34,8 @@ interface UniStoreContextType {
     amount: number,
     metodo: Method
   ) => { success: boolean; payment: Payment };
+  recordServerPayment: (payment: Partial<Payment> & { studentId: string; valorPago: number }) => Payment;
+  syncFromServer: (studentId?: string) => Promise<void>;
   getStudentPayments: (studentId: string) => Payment[];
   getStudentOutstandingInvoices: (studentId: string) => {
     payment?: Payment;
@@ -96,6 +98,110 @@ export function UniStoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(paymentsList));
     }
   }, [paymentsList]);
+
+  // Synchronize state with backend server database so server ledger is authoritative
+  const syncFromServer = async (studentId?: string) => {
+    try {
+      const queryParam = studentId ? `?studentId=${encodeURIComponent(studentId)}` : "";
+      const res = await fetch(`/api/payments/history${queryParam}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.payments && Array.isArray(data.payments) && data.payments.length > 0) {
+          setPaymentsList((prev) => {
+            const serverItems: Payment[] = data.payments.map((sp: any) => ({
+              id: sp.id || sp.reference || (sp._id ? String(sp._id) : `PAG-SRV-${Date.now()}`),
+              studentId: sp.studentId || studentId || "EST-2024-001",
+              feeId: sp.feeId || "PROP-01",
+              valorPago: Number(sp.valorPago || sp.amount || 0),
+              data: sp.data || (sp.timestamp ? sp.timestamp.split("T")[0] : new Date().toISOString().split("T")[0]),
+              metodo: sp.metodo || (sp.channel ? (sp.channel.includes("mpesa") ? "M-Pesa" : "Debito Pay") : "Mobile Money"),
+              estado: (sp.estado as any) || (sp.status === "completed" || sp.status === "success" ? "pago" : "pendente"),
+              recibo: sp.recibo || sp.receiptNo || (sp.reference ? `REC-${sp.reference}` : `REC-SRV-${Date.now()}`),
+            }));
+
+            // Server ledger is authoritative: merge server items with non-duplicated local records
+            const merged = [...serverItems];
+            for (const localP of prev) {
+              const existsOnServer = merged.some(
+                (s) =>
+                  s.id === localP.id ||
+                  (localP.recibo && s.recibo === localP.recibo) ||
+                  (s.feeId === localP.feeId && s.studentId === localP.studentId && s.valorPago === localP.valorPago)
+              );
+              if (!existsOnServer) {
+                merged.push(localP);
+              }
+            }
+            return merged;
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("[UniStore] Server sync notice (offline mode fallback):", err);
+    }
+  };
+
+  useEffect(() => {
+    // Initial background sync against /api/payments/history so payments made via backend gateway routes immediately reflect
+    syncFromServer();
+
+    if (typeof window !== "undefined") {
+      try {
+        const storedUser = localStorage.getItem("upm_auth_user");
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          if (parsed?.id) {
+            syncFromServer(parsed.id);
+          }
+        }
+      } catch {
+        // Ignore JSON parse errors in local storage
+      }
+    }
+  }, []);
+
+  const recordServerPayment = (paymentData: Partial<Payment> & { studentId: string; valorPago: number }): Payment => {
+    const feeId = paymentData.feeId || "PROP-01";
+    const fee = findFee(feeId);
+    const totalFeeVal = fee?.valor ?? paymentData.valorPago;
+    const isFullyPaid = paymentData.valorPago >= totalFeeVal;
+
+    const receipt =
+      paymentData.recibo ||
+      (isFullyPaid ? `REC-${Math.floor(1000 + Math.random() * 9000)}` : "");
+
+    const newPayment: Payment = {
+      id: paymentData.id || `PAG-SRV-${Date.now()}`,
+      studentId: paymentData.studentId,
+      feeId,
+      valorPago: paymentData.valorPago,
+      data: paymentData.data || new Date().toISOString().split("T")[0],
+      metodo: paymentData.metodo || "Mobile Money",
+      estado: (paymentData.estado as any) || (isFullyPaid ? "pago" : "pendente"),
+      recibo: receipt,
+    };
+
+    setPaymentsList((prev) => {
+      const idx = prev.findIndex(
+        (p) => p.id === newPayment.id || (newPayment.recibo && p.recibo === newPayment.recibo)
+      );
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = newPayment;
+        return copy;
+      }
+      return [newPayment, ...prev];
+    });
+
+    // Asynchronously push to server ledger history
+    fetch("/api/payments/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPayment),
+    }).catch((e) => console.warn("[UniStore] Background server sync warning:", e));
+
+    return newPayment;
+  };
 
   const addStudent = (data: {
     id?: string;
@@ -170,6 +276,14 @@ export function UniStoreProvider({ children }: { children: React.ReactNode }) {
       })
     );
 
+    if (updatedPayment) {
+      fetch("/api/payments/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPayment),
+      }).catch((e) => console.warn("[UniStore] Background payment sync warning:", e));
+    }
+
     return { success: !!updatedPayment, payment: updatedPayment };
   };
 
@@ -207,6 +321,13 @@ export function UniStoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     setPaymentsList((prev) => [newPayment, ...prev]);
+
+    fetch("/api/payments/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPayment),
+    }).catch((e) => console.warn("[UniStore] Background payment direct sync warning:", e));
+
     return { success: true, payment: newPayment };
   };
 
@@ -273,6 +394,8 @@ export function UniStoreProvider({ children }: { children: React.ReactNode }) {
         addStudent,
         processPayment,
         payInvoiceDirect,
+        recordServerPayment,
+        syncFromServer,
         getStudentPayments,
         getStudentOutstandingInvoices,
         getStudentStats,

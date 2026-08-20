@@ -19,9 +19,10 @@ import {
 interface ScholarshipRequestModalProps {
   student: Student;
   onClose: () => void;
+  onRequestCreated?: (req: any) => void;
 }
 
-export function ScholarshipRequestModal({ student, onClose }: ScholarshipRequestModalProps) {
+export function ScholarshipRequestModal({ student, onClose, onRequestCreated }: ScholarshipRequestModalProps) {
   const { t, lang } = useI18n();
 
   const [requestType, setRequestType] = useState<
@@ -29,6 +30,7 @@ export function ScholarshipRequestModal({ student, onClose }: ScholarshipRequest
   >("merit");
 
   const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [protocolNumber, setProtocolNumber] = useState("");
 
@@ -70,13 +72,51 @@ export function ScholarshipRequestModal({ student, onClose }: ScholarshipRequest
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) return;
 
-    const protocol = `PROT-${Math.floor(100000 + Math.random() * 900000)}`;
-    setProtocolNumber(protocol);
-    setSubmitted(true);
+    setSubmitting(true);
+    const categoryName =
+      requestType === "merit"
+        ? "Bolsa de Mérito Académico"
+        : requestType === "social"
+        ? "Apoio Social Universitário"
+        : requestType === "family"
+        ? "Desconto Familiar"
+        : "Prorrogação de Prazo";
+
+    const title = `${categoryName} - ${student.curso}`;
+    const generatedProtocol = `PROT-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    try {
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.id,
+          studentName: student.nome,
+          requestType,
+          category: categoryName,
+          title,
+          reason,
+          aiEvaluation,
+        }),
+      });
+      const data = await res.json();
+      const finalProtocol = data.protocol || generatedProtocol;
+      setProtocolNumber(finalProtocol);
+      setSubmitted(true);
+      if (onRequestCreated) {
+        onRequestCreated(data.request || { protocol: finalProtocol, title, category: categoryName, reason });
+      }
+    } catch (err) {
+      console.warn("Failed to persist request to backend:", err);
+      setProtocolNumber(generatedProtocol);
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

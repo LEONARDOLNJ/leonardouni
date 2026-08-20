@@ -28,6 +28,7 @@ interface AuthContextType {
   baseSession: BaseAuthSession | null;
   login: (emailOrId: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
+  updateUser: (updated: Partial<Student>) => void;
   loginWithBaseAccount: (address: string, signature: string, message: string) => { success: boolean };
   linkWallet: (walletAddress: string, walletType?: string) => Promise<void>;
   logout: () => void;
@@ -41,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   baseSession: null,
   login: async () => ({ success: false }),
   signup: async () => ({ success: false }),
+  updateUser: () => {},
   loginWithBaseAccount: () => ({ success: false }),
   linkWallet: async () => {},
   logout: () => {},
@@ -286,6 +288,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
+  const updateUser = (updated: Partial<Student>) => {
+    if (!user) return;
+    const merged = { ...user, ...updated };
+    setUser(merged);
+    localStorage.setItem("ul-auth-student-obj", JSON.stringify(merged));
+    logStudentActivity(user.id, "PROFILE_UPDATED", { fields: Object.keys(updated) });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -293,6 +303,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         baseSession,
         login,
         signup,
+        updateUser,
         loginWithBaseAccount,
         linkWallet,
         logout,

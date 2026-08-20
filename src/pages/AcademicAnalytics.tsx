@@ -54,8 +54,8 @@ export function AcademicAnalytics() {
 
   return (
     <Shell
-      titulo="Analytics Académico & Simulador de Média"
-      descricao="Simule notas futuras, calcule a sua média ponderada em tempo real (Escala 0-20) e analise o seu progresso curricular na Universidade Leonardo."
+      titulo={t("Analytics Académico & Simulador de Média")}
+      descricao={t("Simule notas futuras, calcule a sua média ponderada em tempo real (Escala 0-20) e analise o seu progresso curricular na Universidade Leonardo.")}
     >
       <div className="space-y-8">
         {/* Top summary cards */}
@@ -64,7 +64,7 @@ export function AcademicAnalytics() {
             <div className="absolute top-0 right-0 p-4 opacity-10 text-primary">
               <TrendingUp className="size-16" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Média Ponderada Atual</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("Média Ponderada Atual")}</span>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-4xl font-extrabold text-foreground">{currentGPA}</span>
               <span className="text-sm font-semibold text-muted-foreground">/ 20.00</span>
@@ -78,13 +78,13 @@ export function AcademicAnalytics() {
             <div className="absolute top-0 right-0 p-4 opacity-10 text-primary">
               <BookOpen className="size-16" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total de Créditos (ECTS)</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("Total de Créditos (ECTS)")}</span>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-4xl font-extrabold text-foreground">{totalCredits}</span>
-              <span className="text-sm font-semibold text-muted-foreground">Créditos</span>
+              <span className="text-sm font-semibold text-muted-foreground">{t("Créditos")}</span>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              {courses.length} unidades curriculares contabilizadas no semestre.
+              {courses.length} {t("unidades curriculares contabilizadas no semestre.")}
             </p>
           </div>
 
@@ -92,16 +92,16 @@ export function AcademicAnalytics() {
             <div className="absolute top-0 right-0 p-4 opacity-10 text-primary">
               <Award className="size-16" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Elegibilidade para Bolsa</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">{t("Elegibilidade para Bolsa")}</span>
             <div className="mt-3">
               <span className="text-2xl font-extrabold text-foreground">
-                {numGPA >= 14 ? "Elegível 🌟" : "Em Progresso"}
+                {numGPA >= 14 ? t("Elegível 🌟") : t("Em Progresso")}
               </span>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {numGPA >= 14
-                ? "A sua média cumpre os critérios para apoio financeiro e isenção parcial."
-                : "Aumente a sua média para 14.0 para desbloquear bolsas de mérito."}
+                ? t("A sua média cumpre os critérios para apoio financeiro e isenção parcial.")
+                : t("Aumente a sua média para 14.0 para desbloquear bolsas de mérito.")}
             </p>
           </div>
         </div>
@@ -110,10 +110,10 @@ export function AcademicAnalytics() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Panel
-              titulo="Unidades Curriculares & Simulador de Notas"
+              titulo={t("Unidades Curriculares & Simulador de Notas")}
               acao={
                 <span className="text-xs bg-muted px-2.5 py-1 rounded-full font-mono text-muted-foreground">
-                  Escala de 0 a 20 valores
+                  {t("Escala de 0 a 20 valores")}
                 </span>
               }
             >
@@ -123,17 +123,17 @@ export function AcademicAnalytics() {
                     <div key={c.id} className="py-3 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
                       <div>
                         <p className="font-semibold text-foreground text-sm">{c.name}</p>
-                        <p className="text-xs text-muted-foreground">Créditos ECTS: {c.credits}</p>
+                        <p className="text-xs text-muted-foreground">{t("Créditos ECTS: ")}{c.credits}</p>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <span className="font-mono text-base font-extrabold text-primary">{c.grade} / 20</span>
-                          <span className="text-[10px] text-muted-foreground block">Ponderação: {c.credits * c.grade}</span>
+                          <span className="text-[10px] text-muted-foreground block">{t("Ponderação: ")}{c.credits * c.grade}</span>
                         </div>
                         <button
                           onClick={() => removeCourse(c.id)}
                           className="text-xs text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-500/10 transition cursor-pointer"
-                          title="Remover"
+                          title={t("Remover")}
                         >
                           ✕
                         </button>
@@ -145,17 +145,17 @@ export function AcademicAnalytics() {
                 {/* Add new course form */}
                 <form onSubmit={addCourse} className="mt-6 pt-6 border-t border-border grid grid-cols-1 sm:grid-cols-12 gap-3">
                   <div className="sm:col-span-6">
-                    <label className="text-xs font-medium text-muted-foreground block mb-1">Nome da Disciplina</label>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">{t("Nome da Disciplina")}</label>
                     <input
                       type="text"
                       value={newCourseName}
                       onChange={(e) => setNewCourseName(e.target.value)}
-                      placeholder="Ex: Computação em Nuvem"
+                      placeholder={t("Ex: Computação em Nuvem")}
                       className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   <div className="sm:col-span-3">
-                    <label className="text-xs font-medium text-muted-foreground block mb-1">Créditos (ECTS)</label>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">{t("Créditos (ECTS)")}</label>
                     <input
                       type="number"
                       min={1}
@@ -166,7 +166,7 @@ export function AcademicAnalytics() {
                     />
                   </div>
                   <div className="sm:col-span-3">
-                    <label className="text-xs font-medium text-muted-foreground block mb-1">Nota Esperada (0-20)</label>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">{t("Nota Esperada (0-20)")}</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -180,7 +180,7 @@ export function AcademicAnalytics() {
                         type="submit"
                         className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition shrink-0 cursor-pointer"
                       >
-                        + Adicionar
+                        {t("+ Adicionar")}
                       </button>
                     </div>
                   </div>
@@ -190,14 +190,14 @@ export function AcademicAnalytics() {
           </div>
 
           <div className="space-y-6">
-            <Panel titulo="Metas Académicas & Recomendações IA">
+            <Panel titulo={t("Metas Académicas & Recomendações IA")}>
               <div className="p-6 space-y-4 text-xs text-muted-foreground leading-relaxed">
                 <div className="flex items-start gap-3 bg-muted/30 p-3.5 rounded-lg border border-border">
                   <Sparkles className="size-5 text-primary shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-foreground">Análise Inteligente</p>
+                    <p className="font-bold text-foreground">{t("Análise Inteligente")}</p>
                     <p className="mt-1">
-                      Com uma média de <span className="font-bold text-primary">{currentGPA}</span>, o seu desempenho situa-se no top 10% da turma de {user?.curso || "Engenharia Informática"}.
+                      {t("Com uma média de")} <span className="font-bold text-primary">{currentGPA}</span>{t(", o seu desempenho situa-se no top 10% da turma de")} {user?.curso || "Engenharia Informática"}.
                     </p>
                   </div>
                 </div>
@@ -205,10 +205,10 @@ export function AcademicAnalytics() {
                 <div className="space-y-2">
                   <p className="font-bold text-foreground flex items-center gap-1.5">
                     <Target className="size-4 text-emerald-500" />
-                    <span>Próximo Objetivo</span>
+                    <span>{t("Próximo Objetivo")}</span>
                   </p>
                   <p>
-                    Para alcançar a menção de <strong>Excelente (17.0+)</strong>, mantenha notas acima de 17 nas unidades curriculares de TFC e Inteligência Artificial.
+                    {t("Para alcançar a menção de")} <strong>Excelente (17.0+)</strong>{t(", mantenha notas acima de 17 nas unidades curriculares de TFC e Inteligência Artificial.")}
                   </p>
                 </div>
 
@@ -217,7 +217,7 @@ export function AcademicAnalytics() {
                     href="/orientador"
                     className="block w-full text-center bg-primary/10 text-primary font-bold py-2.5 rounded-lg hover:bg-primary/20 transition"
                   >
-                    Consultar Orientador IA ➔
+                    {t("Consultar Orientador IA ➔")}
                   </a>
                 </div>
               </div>

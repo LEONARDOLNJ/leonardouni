@@ -77,28 +77,28 @@ export function AcademicCalendar() {
   );
 
   return (
-    <div className="rounded-sm border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-sm bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-0.5 text-xs font-bold text-primary">
             <CalendarIcon className="size-3.5" />
             <span>{t("Calendário Académico & Financeiro 2026")}</span>
           </div>
-          <h2 className="font-display text-lg font-bold text-foreground">
+          <h2 className="font-display text-lg sm:text-xl font-extrabold text-foreground">
             {t("Próximos Milestones & Datas Limite de Pagamento")}
           </h2>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-1.5 text-xs">
+        <div className="flex flex-wrap gap-1 bg-muted/60 p-1 rounded-xl border border-border/60 text-xs">
           {["todos", "propina", "matricula", "exame"].map((cat) => (
             <button
               key={cat}
               onClick={() => setFilterCat(cat)}
-              className={`rounded-sm border px-3 py-1 font-medium capitalize transition ${
+              className={`rounded-lg px-3 py-1.5 font-bold capitalize transition-all cursor-pointer ${
                 filterCat === cat
-                  ? "border-primary bg-primary text-primary-foreground font-semibold"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/40"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t(cat)}
@@ -108,51 +108,51 @@ export function AcademicCalendar() {
       </div>
 
       {/* Timeline List */}
-      <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-1">
         {filtered.map((m) => (
           <div
             key={m.id}
-            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-sm border p-4 transition ${
+            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-xs ${
               m.urgente
-                ? "border-accent/60 bg-accent/5"
-                : "border-border bg-card hover:bg-muted/10"
+                ? "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50"
+                : "border-border/80 bg-card hover:bg-muted/20 hover:border-primary/30"
             }`}
           >
             <div className="flex items-start gap-4">
               {/* Date Badge */}
               <div
-                className={`flex size-12 shrink-0 flex-col items-center justify-center rounded-sm font-display font-bold ${
+                className={`flex size-13 shrink-0 flex-col items-center justify-center rounded-xl font-display font-black border shadow-2xs ${
                   m.urgente
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-primary/10 text-primary"
+                    ? "bg-amber-500 text-white border-amber-600"
+                    : "bg-primary/10 text-primary border-primary/20"
                 }`}
               >
-                <span className="text-base leading-none">{m.dia}</span>
-                <span className="text-[10px] uppercase tracking-wider leading-none mt-0.5">
+                <span className="text-lg leading-none">{m.dia}</span>
+                <span className="text-[10px] uppercase font-mono tracking-wider leading-none mt-1">
                   {m.mes}
                 </span>
               </div>
 
-              <div>
+              <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-display font-semibold text-sm text-foreground">
+                  <h3 className="font-display font-bold text-sm text-foreground">
                     {t(m.titulo)}
                   </h3>
                   {m.urgente && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold text-destructive">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
                       <AlertCircle className="size-3" />
                       <span>{t("Data Próxima")}</span>
                     </span>
                   )}
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
                   {t(m.descricao)}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs border-t sm:border-t-0 pt-2 sm:pt-0 border-border/60 shrink-0">
-              <span className="inline-flex items-center gap-1 font-mono text-muted-foreground">
+            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs border-t sm:border-t-0 pt-3 sm:pt-0 border-border/60 shrink-0">
+              <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-muted-foreground bg-muted/60 px-3 py-1 rounded-lg border border-border/60">
                 <Clock className="size-3.5 text-primary" />
                 <span>
                   {m.diasResta} {t("dias restantes")}

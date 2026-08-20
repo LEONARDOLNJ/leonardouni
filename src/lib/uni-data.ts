@@ -1,6 +1,14 @@
 export type FeeKind = "propina" | "taxa";
 export type PaymentStatus = "pago" | "pendente" | "vencido";
-export type Method = "Cartão" | "Mobile Money" | "Transferência Bancária" | "Base Pay (USDC)";
+export type Method =
+  | "Cartão"
+  | "Mobile Money"
+  | "Transferência Bancária"
+  | "Base Pay (USDC)"
+  | "Crypto (Base Pay)"
+  | "DPO Sandbox Pay"
+  | "Debito Pay"
+  | "M-Pesa";
 
 export interface Student {
   id: string;
@@ -89,13 +97,16 @@ export const payments: Payment[] = [
   { id: "PAG-1012", studentId: "EST-2024-007", feeId: "PROP-01", valorPago: 0, data: "2026-03-15", metodo: "Cartão", estado: "pendente", recibo: "" },
 ];
 
+export type CurrencyCode = "MZN" | "USD" | "EUR" | "ZAR";
+
 export const MZN_USD_RATE = 63.8;
 export const MZN_EUR_RATE = 69.5;
+export const MZN_ZAR_RATE = 3.5;
 
 export const mzn = (v: number) =>
   new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN", minimumFractionDigits: 2 }).format(v);
 
-export const formatCurrency = (amountMzn: number, currency: "MZN" | "USD" | "EUR" = "MZN") => {
+export const formatCurrency = (amountMzn: number, currency: CurrencyCode = "MZN") => {
   if (currency === "USD") {
     const val = amountMzn / MZN_USD_RATE;
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(val);
@@ -104,7 +115,24 @@ export const formatCurrency = (amountMzn: number, currency: "MZN" | "USD" | "EUR
     const val = amountMzn / MZN_EUR_RATE;
     return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2 }).format(val);
   }
+  if (currency === "ZAR") {
+    const val = amountMzn / MZN_ZAR_RATE;
+    return new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 2 }).format(val);
+  }
   return mzn(amountMzn);
+};
+
+export const formatUsdInCurrency = (amountUsd: number, currency: CurrencyCode = "MZN") => {
+  const amountMzn = amountUsd * MZN_USD_RATE;
+  return formatCurrency(amountMzn, currency);
+};
+
+export const convertUsdToCurrency = (amountUsd: number, currency: CurrencyCode = "MZN") => {
+  const amountMzn = amountUsd * MZN_USD_RATE;
+  if (currency === "USD") return amountUsd;
+  if (currency === "EUR") return amountMzn / MZN_EUR_RATE;
+  if (currency === "ZAR") return amountMzn / MZN_ZAR_RATE;
+  return amountMzn;
 };
 
 export const dataPt = (iso: string) =>
