@@ -8,6 +8,7 @@ import { UniversityLogo } from "@/components/UniversityLogo";
 import { Web3AuthButtons } from "@/components/Web3AuthButtons";
 import { SignInWithBaseButton } from "@/components/SignInWithBaseButton";
 import { AIVoiceAssistant } from "@/components/AIVoiceAssistant";
+import { AIChatbot } from "@/components/AIChatbot";
 import {
   Sun,
   Moon,
@@ -354,6 +355,9 @@ export function Shell({
           © {new Date().getFullYear()} {UNIVERSITY.nome} · {t("Todos os direitos reservados.")}
         </div>
       </footer>
+
+      {/* Persistent Global AI Chatbot */}
+      <AIChatbot />
     </div>
   );
 }
