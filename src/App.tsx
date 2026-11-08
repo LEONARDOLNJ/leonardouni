@@ -1,9 +1,11 @@
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
+import { RoleProvider } from "@/lib/role";
 import { Web3Provider } from "@/lib/web3-base";
 import { SubscriptionProvider } from "@/lib/subscription-store";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
+import { OfflineStatusBanner } from "@/components/OfflineStatusBanner";
 import { RouterProvider, useRouter } from "@/lib/router";
 import { UniStoreProvider } from "@/lib/uni-store";
 import { Dashboard } from "@/pages/Dashboard";
@@ -18,6 +20,8 @@ import { Login } from "@/pages/Login";
 import { StudentPortal } from "@/pages/StudentPortal";
 import { AcademicAnalytics } from "@/pages/AcademicAnalytics";
 import { CampusHub } from "@/pages/CampusHub";
+import { PainelFuncionario } from "@/pages/PainelFuncionario";
+import { VerificarDocumento } from "@/pages/VerificarDocumento";
 
 function AppRoutes() {
   const { path } = useRouter();
@@ -55,6 +59,12 @@ function AppRoutes() {
   if (path === "/documentos") {
     return <Documentos />;
   }
+  if (path === "/verificar" || path === "/verify" || path === "/validar") {
+    return <VerificarDocumento />;
+  }
+  if (path === "/painel-funcionario" || path === "/administracao" || path === "/staff") {
+    return <PainelFuncionario />;
+  }
 
   return <Dashboard />;
 }
@@ -64,16 +74,19 @@ export default function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <Web3Provider>
-            <SubscriptionProvider>
-              <UniStoreProvider>
-                <RouterProvider>
-                  <AppRoutes />
-                  <SubscriptionModal />
-                </RouterProvider>
-              </UniStoreProvider>
-            </SubscriptionProvider>
-          </Web3Provider>
+          <RoleProvider>
+            <Web3Provider>
+              <SubscriptionProvider>
+                <UniStoreProvider>
+                  <RouterProvider>
+                    <OfflineStatusBanner />
+                    <AppRoutes />
+                    <SubscriptionModal />
+                  </RouterProvider>
+                </UniStoreProvider>
+              </SubscriptionProvider>
+            </Web3Provider>
+          </RoleProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

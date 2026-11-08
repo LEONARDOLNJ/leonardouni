@@ -11,6 +11,13 @@ import { ScholarshipRequestModal } from "@/components/ScholarshipRequestModal";
 import { PayInvoiceModal } from "@/components/PayInvoiceModal";
 import { StudentActivityTrackerModal } from "@/components/StudentActivityTrackerModal";
 import { StudentProfileEditModal } from "@/components/StudentProfileEditModal";
+import { BiometricVerificationModal } from "@/components/BiometricVerificationModal";
+import {
+  BiometricSecuritySettingsModal,
+  BiometricSecuritySettingsView,
+} from "@/components/BiometricSecuritySettingsModal";
+import { OfflineDocumentsHub } from "@/components/OfflineDocumentsHub";
+import { PushNotificationBanner } from "@/components/PushNotificationBanner";
 import { useUniStore } from "@/lib/uni-store";
 import {
   fees,
@@ -60,6 +67,10 @@ import {
   ChevronRight,
   Shield,
   HelpCircle,
+  Fingerprint,
+  ScanFace,
+  HardDrive,
+  WifiOff,
 } from "lucide-react";
 import heroImg from "@/assets/campus-hero.jpg";
 
@@ -101,7 +112,7 @@ export function StudentPortal() {
   const { getStudentPayments, getStudentOutstandingInvoices, getStudentStats } = useUniStore();
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "payments" | "generated" | "requests" | "activity" | "security"
+    "overview" | "payments" | "generated" | "offline_docs" | "requests" | "activity" | "security"
   >("overview");
 
   const [selectedCurrency, setSelectedCurrency] = useState<"MZN" | "USD" | "EUR" | "ZAR">("MZN");
@@ -110,6 +121,8 @@ export function StudentPortal() {
   const [showScholarshipModal, setShowScholarshipModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [showBiometricModal, setShowBiometricModal] = useState(false);
+  const [showBiometricSecurityModal, setShowBiometricSecurityModal] = useState(false);
   const [selectedPayInvoice, setSelectedPayInvoice] = useState<{
     fee: Fee;
     payment?: Payment;
@@ -408,6 +421,14 @@ export function StudentPortal() {
                 <span>{t("Solicitar Bolsa")}</span>
               </button>
 
+              <button
+                onClick={() => setShowBiometricSecurityModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20 transition shadow-2xs cursor-pointer"
+              >
+                <ShieldCheck className="size-3.5 text-emerald-500" />
+                <span>{t("Configurar Biometria")}</span>
+              </button>
+
               {/* Currency Selector */}
               <div className="flex items-center gap-0.5 rounded-xl border border-border bg-muted/40 p-1 text-xs">
                 <span className="px-1.5 text-[11px] font-bold text-muted-foreground">
@@ -497,6 +518,52 @@ export function StudentPortal() {
               )}
             </div>
           </div>
+
+          {/* Biometric Credentials & Passkey Status Strip */}
+          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/20 via-emerald-900/10 to-transparent p-4 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shrink-0 shadow-xs">
+                <Fingerprint className="size-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
+                    {t("Autenticação Biométrica & Passkey WebAuthn")}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                    <CheckCircle2 className="size-2.5" />
+                    {t("Dispositivo Verificado")}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("Protegido por Touch ID / Face ID / TPM 2.0. Pode autenticar-se no portal sem necessidade de memorizar senhas.")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowBiometricSecurityModal(true)}
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <ScanFace className="size-4" />
+                <span>{t("Registar Rosto / Digital")}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowBiometricModal(true)}
+                className="rounded-xl border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <Fingerprint className="size-4 text-emerald-400" />
+                <span>{t("Testar Verificação")}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Service Worker Push Notifications Banner */}
+          <PushNotificationBanner />
 
           {/* Key Metric KPIs Grid */}
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
@@ -615,6 +682,22 @@ export function StudentPortal() {
             </button>
 
             <button
+              onClick={() => setActiveTab("offline_docs")}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 font-bold transition cursor-pointer ${
+                activeTab === "offline_docs"
+                  ? "bg-card text-foreground shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <HardDrive className="size-4 text-emerald-500" />
+              <span>{t("Cache Offline (SW)")}</span>
+              <span className="rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-extrabold flex items-center gap-0.5">
+                <WifiOff className="size-2.5" />
+                <span>PWA</span>
+              </span>
+            </button>
+
+            <button
               onClick={() => setActiveTab("requests")}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 font-bold transition cursor-pointer ${
                 activeTab === "requests"
@@ -652,8 +735,11 @@ export function StudentPortal() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <MapPin className="size-4" />
-              <span>{t("Geolocalização & Segurança")}</span>
+              <ShieldCheck className="size-4 text-emerald-500" />
+              <span>{t("Segurança & Biometria")}</span>
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                FIDO2
+              </span>
             </button>
           </div>
 
@@ -1214,6 +1300,15 @@ export function StudentPortal() {
         )}
 
         {/* ========================================================================= */}
+        {/* TAB: OFFLINE DOCUMENTS & SERVICE WORKER CACHE */}
+        {/* ========================================================================= */}
+        {activeTab === "offline_docs" && (
+          <div className="space-y-6">
+            <OfflineDocumentsHub />
+          </div>
+        )}
+
+        {/* ========================================================================= */}
         {/* TAB 4: ACADEMIC REQUESTS & SCHOLARSHIP APPLICATIONS */}
         {/* ========================================================================= */}
         {activeTab === "requests" && (
@@ -1399,10 +1494,18 @@ export function StudentPortal() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 6: GEOLOCATION & SECURITY ACCESS LOGS */}
+        {/* TAB 6: BIOMETRIC SECURITY & GEOLOCATION ACCESS LOGS */}
         {/* ========================================================================= */}
         {activeTab === "security" && (
           <div className="space-y-6">
+            {/* Primary Biometric Configuration & Registration Panel */}
+            <BiometricSecuritySettingsView
+              studentId={user.id}
+              studentName={user.nome}
+              isModal={false}
+            />
+
+            {/* Geolocation & Campus Audit Log */}
             <Panel titulo={t("Geolocalização & Segurança de Acesso à Conta")}>
               <div className="p-4 bg-muted/20 border-b border-border text-xs text-muted-foreground">
                 <p>
@@ -1545,6 +1648,23 @@ export function StudentPortal() {
             setSelectedPayInvoice(null);
             fetchStudentFullHistory();
           }}
+        />
+      )}
+
+      {showBiometricModal && (
+        <BiometricVerificationModal
+          isOpen={showBiometricModal}
+          onClose={() => setShowBiometricModal(false)}
+          targetStudentId={user.id}
+        />
+      )}
+
+      {showBiometricSecurityModal && (
+        <BiometricSecuritySettingsModal
+          isOpen={showBiometricSecurityModal}
+          onClose={() => setShowBiometricSecurityModal(false)}
+          studentId={user.id}
+          studentName={user.nome}
         />
       )}
     </Shell>

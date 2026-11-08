@@ -1,6 +1,7 @@
 import { Link } from "@/lib/router";
 import { Panel, Shell, StatusBadge } from "@/components/Shell";
 import { useUniStore } from "@/lib/uni-store";
+import { useRole, WorkerOnly, StudentOnly } from "@/lib/role";
 import { dataPt, mzn, type Payment, type Fee, type Student } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
 import { AcademicCalendar } from "@/components/AcademicCalendar";
@@ -19,6 +20,7 @@ import {
   CreditCard,
   FileText,
   Building,
+  Briefcase,
 } from "lucide-react";
 import campusLifeImg from "@/assets/images/campus_life_1786439382297.jpg";
 import financeServicesImg from "@/assets/images/financial_services_1786439400478.jpg";
@@ -27,6 +29,7 @@ import studentSupportImg from "@/assets/images/student_support_1786439415676.jpg
 export function Dashboard() {
   const { t: tr } = useI18n();
   const { payments, students, fees } = useUniStore();
+  const { isWorker, isStudent, workerProfile } = useRole();
 
   const findStudentInStore = (id: string) => students.find((s) => s.id === id);
   const findFeeInStore = (id: string) => fees.find((f) => f.id === id);
@@ -109,30 +112,55 @@ export function Dashboard() {
       titulo="Painel de Gestão Financeira & Pagamentos"
       descricao="Visão executiva e consolidada de propinas, taxas, liquidação e estado financeiro institucional."
     >
-      {/* AI Guidance Callout Banner */}
-      <div className="mb-8 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-accent/5 to-card p-6 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative">
-        <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary bg-primary/15 border border-primary/20 px-3 py-1 rounded-full">
-            <Sparkles className="size-3.5 text-amber-500" />
-            <span>{tr("Novo Orientador Inteligente")}</span>
+      {/* Role-tailored Action Banners */}
+      {isWorker ? (
+        <div className="mb-8 overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-slate-900/40 to-card p-6 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative">
+          <div className="space-y-2 relative z-10">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
+              <Briefcase className="size-3.5 text-amber-500" />
+              <span>{tr("Área de Trabalho Administrativa (Funcionário)")}</span>
+            </div>
+            <h2 className="font-display text-xl sm:text-2xl font-extrabold text-foreground">
+              {tr("Gabinete de Tesouraria, Emissão de Quitações & Notificações")}
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
+              {tr("Sessão autenticada para o funcionário")} <strong>{workerProfile.name}</strong> ({workerProfile.cargo}). {tr("Aceda a ferramentas de fecho de caixa, aprovação de isenções e disparador de SMS.")}
+            </p>
           </div>
-          <h2 className="font-display text-xl sm:text-2xl font-extrabold text-foreground">
-            {tr("Orientador IA do Estudante · Guia de Escolhas & Custos")}
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
-            {tr(
-              "Obtenha simulações de custos, opções de parcelamento de propinas e aconselhamento financeiro personalizado segundo o seu curso e escolhas.",
-            )}
-          </p>
+          <Link
+            to="/painel-funcionario"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-3 text-xs sm:text-sm font-bold text-slate-950 shadow-sm transition hover:scale-[1.02] active:scale-[0.98] shrink-0 cursor-pointer"
+          >
+            <Building className="size-4" />
+            <span>{tr("Abrir Painel de Funcionário")}</span>
+            <ArrowRight className="size-4" />
+          </Link>
         </div>
-        <Link
-          to="/orientador"
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] shrink-0"
-        >
-          <span>{tr("Abrir Orientador IA")}</span>
-          <ArrowRight className="size-4" />
-        </Link>
-      </div>
+      ) : (
+        <div className="mb-8 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-accent/5 to-card p-6 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative">
+          <div className="space-y-2 relative z-10">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary bg-primary/15 border border-primary/20 px-3 py-1 rounded-full">
+              <Sparkles className="size-3.5 text-amber-500" />
+              <span>{tr("Novo Orientador Inteligente")}</span>
+            </div>
+            <h2 className="font-display text-xl sm:text-2xl font-extrabold text-foreground">
+              {tr("Orientador IA do Estudante · Guia de Escolhas & Custos")}
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
+              {tr(
+                "Obtenha simulações de custos, opções de parcelamento de propinas e aconselhamento financeiro personalizado segundo o seu curso e escolhas.",
+              )}
+            </p>
+          </div>
+          <Link
+            to="/orientador"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] shrink-0"
+          >
+            <span>{tr("Abrir Orientador IA")}</span>
+            <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      )}
 
       {/* KPI Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

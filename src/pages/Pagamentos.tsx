@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Panel, Shell, StatusBadge } from "@/components/Shell";
 import { downloadReceipt } from "@/lib/pdf";
 import { useUniStore } from "@/lib/uni-store";
+import { useRole, WorkerOnly, StudentOnly } from "@/lib/role";
 import { dataPt, mzn, type PaymentStatus, type Payment, type Fee, type Student } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
 import { PayInvoiceModal } from "@/components/PayInvoiceModal";
@@ -9,13 +10,14 @@ import { SmsNotificationModal } from "@/components/SmsNotificationModal";
 import { PaymentCredentialsModal } from "@/components/PaymentCredentialsModal";
 import { DebitoPayCheckoutModal } from "@/components/DebitoPayCheckoutModal";
 import financeImg from "@/assets/images/financial_services_1786439400478.jpg";
-import { DollarSign, Download, CreditCard, Bell, Key, Zap } from "lucide-react";
+import { DollarSign, Download, CreditCard, Bell, Key, Zap, Shield, Briefcase, GraduationCap } from "lucide-react";
 
 const FILTROS = ["todos", "pago", "pendente", "vencido"] as const;
 
 export function Pagamentos() {
   const { t } = useI18n();
   const { payments, students, fees } = useUniStore();
+  const { isWorker, isStudent } = useRole();
 
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number]>("todos");
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
@@ -90,28 +92,32 @@ export function Pagamentos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Worker-Only Actions: API Keys Management and Bulk SMS Dispatches */}
+          <WorkerOnly>
+            <button
+              onClick={() => setShowCredentialsModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-sm bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition cursor-pointer"
+            >
+              <Key className="size-3.5" />
+              <span>Chaves de API & Gateways (Staff)</span>
+            </button>
+
+            <button
+              onClick={() => handleOpenSms()}
+              className="inline-flex items-center gap-2 rounded-sm bg-accent/20 border border-accent/40 px-3.5 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/30 transition cursor-pointer"
+            >
+              <Bell className="size-3.5" />
+              <span>{t("Disparar Lembrete SMS / M-Pesa")}</span>
+            </button>
+          </WorkerOnly>
+
+          {/* Student or All-user Sandbox Checkout */}
           <button
             onClick={() => setShowDebitoModal(true)}
             className="inline-flex items-center gap-1.5 rounded-sm bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 text-xs font-bold text-purple-600 dark:text-purple-300 hover:bg-purple-500/25 transition cursor-pointer shadow-xs"
           >
             <Zap className="size-3.5 text-purple-500" />
-            <span>Debito Pay Sandbox & HMAC</span>
-          </button>
-
-          <button
-            onClick={() => setShowCredentialsModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-sm bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition cursor-pointer"
-          >
-            <Key className="size-3.5" />
-            <span>Chaves de API & Gateways</span>
-          </button>
-
-          <button
-            onClick={() => handleOpenSms()}
-            className="inline-flex items-center gap-2 rounded-sm bg-accent/20 border border-accent/40 px-3.5 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/30 transition cursor-pointer"
-          >
-            <Bell className="size-3.5" />
-            <span>{t("Disparar Lembrete SMS / M-Pesa")}</span>
+            <span>Debito Pay Sandbox</span>
           </button>
         </div>
       </div>

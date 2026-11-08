@@ -2167,7 +2167,7 @@ app.get("/api/verify/receipt/:code", async (req, res) => {
         id: "PAG-001",
         recibo: "REC-2026-001",
         studentId: "EST-2024-001",
-        studentNome: "Leonardo Nhantumbo",
+        studentNome: "Leonardo Júnior Nhantumbo",
         curso: "Engenharia Informática",
         feeTitle: "Propina de Matrícula (Fevereiro 2026)",
         valorPago: 18500,
@@ -2202,6 +2202,32 @@ app.get("/api/verify/receipt/:code", async (req, res) => {
         estado: "pago",
         entidade: "Leonardo University · Maputo",
       },
+      "REC-2026-004": {
+        id: "PAG-004",
+        recibo: "REC-2026-004",
+        studentId: "EST-2024-004",
+        studentNome: "Fátima Matusse",
+        curso: "Economia & Gestão",
+        feeTitle: "Propina Mensal — Fevereiro 2026",
+        valorPago: 12000,
+        metodo: "M-Pesa",
+        data: "2026-02-20T11:00:00Z",
+        estado: "pago",
+        entidade: "Leonardo University · Maputo",
+      },
+      "REC-2026-005": {
+        id: "PAG-005",
+        recibo: "REC-2026-005",
+        studentId: "EST-2024-005",
+        studentNome: "Inácio Tembe",
+        curso: "Engenharia Civil",
+        feeTitle: "Taxa de Matrícula & Laboratório",
+        valorPago: 6800,
+        metodo: "e-Mola",
+        data: "2026-02-21T16:45:00Z",
+        estado: "pago",
+        entidade: "Leonardo University · Maputo",
+      },
     };
 
     if (!paymentRecord) {
@@ -2227,11 +2253,45 @@ app.get("/api/verify/receipt/:code", async (req, res) => {
       };
     }
 
+    // Support for academic certificates (DECL-, CERT-, DOC-)
+    if (!paymentRecord && (rawCode.startsWith("DECL-") || rawCode.startsWith("CERT-") || rawCode.startsWith("DOC-"))) {
+      const isQuittance = rawCode.includes("QUIT") || rawCode.includes("DECL-UL") || rawCode.includes("FINANC");
+      const isEnrollment = rawCode.includes("MATR") || rawCode.includes("DECL-EST");
+      
+      const certTitle = isQuittance
+        ? "Declaração Oficial de Quitação Total de Propinas"
+        : isEnrollment
+        ? "Certidão Oficial de Matrícula e Frequência 2026"
+        : "Certificado Académico Oficial";
+
+      const docPayloadSeal = `${rawCode}:EST-2024-001:CERTIFICATE:UL-MOZAMBIQUE-2026`;
+      const digitalSeal = crypto.createHash("sha256").update(docPayloadSeal).digest("hex");
+
+      return res.status(200).json({
+        valid: true,
+        isCertificate: true,
+        documentType: isQuittance ? "CERTIFICADO_QUITACAO" : isEnrollment ? "CERTIFICADO_MATRICULA" : "DECLARACAO",
+        documentTitle: certTitle,
+        code: rawCode,
+        studentId: "EST-2024-001",
+        studentNome: "Leonardo Júnior Nhantumbo",
+        curso: "Licenciatura em Engenharia Informática",
+        anoCurricular: 3,
+        situacao: "REGULARIZADO & EM CONFORMIDADE",
+        data: new Date().toISOString(),
+        digitalSeal: `UL-CERT-${digitalSeal.substring(0, 16).toUpperCase()}`,
+        fullHash: digitalSeal,
+        emissor: "Leonardo University — Secretaria Geral & Registo Académico",
+        nuit: "400192847",
+        verificadoEm: new Date().toISOString(),
+      });
+    }
+
     if (!paymentRecord) {
       return res.status(404).json({
         valid: false,
         code: rawCode,
-        message: "Recibo não encontrado ou inválido no registo oficial da universidade.",
+        message: "Documento ou recibo não encontrado no registo oficial da universidade.",
       });
     }
 
@@ -2241,11 +2301,14 @@ app.get("/api/verify/receipt/:code", async (req, res) => {
 
     return res.status(200).json({
       valid: true,
+      documentType: "RECIBO",
+      documentTitle: "Recibo Oficial de Pagamento de Propinas & Emolumentos",
       recibo: paymentRecord.recibo || paymentRecord.id,
+      code: paymentRecord.recibo || paymentRecord.id,
       paymentId: paymentRecord.id,
       studentId: paymentRecord.studentId,
       studentNome: paymentRecord.studentNome || paymentRecord.nome || "Estudante Verificado",
-      curso: paymentRecord.curso || "Licenciatura",
+      curso: paymentRecord.curso || "Engenharia Informática",
       feeTitle: paymentRecord.feeTitle || paymentRecord.designacao || "Propina Universitária",
       valorPago: paymentRecord.valorPago || paymentRecord.amount || 0,
       moeda: "MZN",
@@ -2260,8 +2323,15 @@ app.get("/api/verify/receipt/:code", async (req, res) => {
     });
   } catch (err: any) {
     console.error("Verification endpoint error:", err);
-    res.status(500).json({ valid: false, error: "Erro interno ao verificar recibo." });
+    res.status(500).json({ valid: false, error: "Erro interno ao verificar recibo ou certificado." });
   }
+});
+
+// Alias for generic document verification endpoint
+app.get("/api/verify/document/:code", async (req, res) => {
+  const code = req.params.code;
+  req.url = `/api/verify/receipt/${encodeURIComponent(code)}`;
+  return (app as any)._router.handle(req, res);
 });
 
 

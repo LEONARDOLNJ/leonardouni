@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import { useRole } from "@/lib/role";
 import { useI18n } from "@/lib/i18n";
 import { useRouter } from "@/lib/router";
 import { useWeb3 } from "@/lib/web3-base";
 import { SignInWithBaseButton } from "@/components/SignInWithBaseButton";
 import { Shell, Panel } from "@/components/Shell";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
+import { BiometricVerificationModal } from "@/components/BiometricVerificationModal";
+import { AdvancedWorkerLoginForm } from "@/components/AdvancedWorkerLoginForm";
 import { UniversityLogo } from "@/components/UniversityLogo";
+import { isWebAuthnSupported } from "@/lib/biometrics";
 import { students, UNIVERSITY } from "@/lib/uni-data";
 import {
   LogIn,
@@ -24,17 +28,31 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCw,
+  Fingerprint,
+  ScanFace,
+  ShieldCheck,
+  Building,
+  Briefcase,
+  Lock,
 } from "lucide-react";
 import heroImg from "@/assets/campus-hero.jpg";
 
 export function Login() {
   const { user, login, signup, logout, resetModalOpen, setResetModalOpen } = useAuth();
+  const { isWorker, workerProfile, setRole } = useRole();
   const { t } = useI18n();
   const { navigate } = useRouter();
   const { signInWithBase, signInWithEthereum } = useWeb3();
 
-  // Mode: 'login' or 'signup'
+  // Target Portal View: 'student' or 'worker'
+  const [activePortal, setActivePortal] = useState<"student" | "worker">("student");
+
+  // Mode within student portal: 'login' or 'signup'
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+
+  // Biometric modal state
+  const [biometricModalOpen, setBiometricModalOpen] = useState(false);
+  const [targetBioStudentId, setTargetBioStudentId] = useState<string | undefined>(undefined);
 
   // Login form state
   const [identifier, setIdentifier] = useState("");
@@ -79,6 +97,7 @@ export function Login() {
     setLoading(false);
 
     if (res.success) {
+      setRole("student");
       navigate("/portal");
     } else {
       setError(res.error || t("Falha na autenticação. Verifique os seus dados."));
@@ -127,84 +146,136 @@ export function Login() {
 
   return (
     <Shell
-      titulo="Portal de Autenticação do Estudante"
-      descricao="Aceda à sua conta pessoal para consultar propinas, descarregar declarações, gerir pagamentos e visualizar o seu extrato financeiro."
+      titulo={
+        activePortal === "worker"
+          ? t("Portal de Acesso para Secretários & Staff")
+          : t("Portal de Autenticação do Estudante")
+      }
+      descricao={
+        activePortal === "worker"
+          ? t("Gabinete institucional para secretários financeiros, tesoureiros, oficiais de cobrança e administradores.")
+          : t("Aceda à sua conta pessoal para consultar propinas, descarregar declarações, gerir pagamentos e visualizar o seu extrato financeiro.")
+      }
       imagem={heroImg}
     >
-      <div className="mx-auto max-w-4xl space-y-8">
-        {/* MongoDB Status Banner */}
-        <div className="flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 p-3 text-xs">
-          <div className="flex items-center gap-2">
-            <Database className="size-4 text-primary shrink-0" />
-            <div>
-              <span className="font-bold text-foreground">Base de Dados MongoDB Backend: </span>
-              {dbStatus?.isConnected ? (
-                <span className="text-emerald-500 font-semibold inline-flex items-center gap-1">
-                  <CheckCircle2 className="size-3.5 inline" /> Ligado ({dbStatus.databaseName || "unileonardo_db"}) · {dbStatus.collections?.users || 0} Estudantes Registados
-                </span>
-              ) : (
-                <span className="text-amber-500 font-semibold inline-flex items-center gap-1">
-                  <AlertCircle className="size-3.5 inline" /> Modo Local Fallback (MongoDB a aguardar string MONGODB_URI)
-                </span>
-              )}
-            </div>
+      <div className="mx-auto max-w-4xl space-y-6">
+        {/* Dual Portal Switcher Tabs */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center p-1.5 rounded-2xl bg-muted/60 border border-border shadow-xs max-w-md w-full">
+            <button
+              type="button"
+              onClick={() => setActivePortal("student")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition cursor-pointer ${
+                activePortal === "student"
+                  ? "bg-card text-foreground shadow-xs border border-border/80"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <GraduationCap className="size-4 text-primary" />
+              <span>{t("Portal do Estudante")}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActivePortal("worker")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition cursor-pointer ${
+                activePortal === "worker"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Building className="size-4" />
+              <span>{t("Secretaria & Staff")}</span>
+              <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950">
+                MFA
+              </span>
+            </button>
           </div>
-          <button
-            onClick={() => {
-              fetch("/api/db/status").then((r) => r.json()).then(setDbStatus);
-            }}
-            className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            <RefreshCw className="size-3" />
-            <span>Atualizar Status</span>
-          </button>
         </div>
 
-        {user ? (
-          <Panel titulo={t("Sessão Activa")}>
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-4 rounded-md border border-primary/20 bg-primary/5 p-4">
-                <div className="flex size-12 items-center justify-center rounded-full bg-primary font-display font-bold text-lg text-primary-foreground">
-                  {user.nome.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-foreground text-base leading-tight">
-                      {user.nome}
-                    </p>
-                    {user.isInternational && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 border border-accent/40 px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
-                        <Globe className="size-3" />
-                        {t("Internacional")}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {user.id} · {user.curso} ({user.ano}º Ano) · {user.email}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => navigate("/portal")}
-                  className="inline-flex items-center gap-2 rounded-sm bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition cursor-pointer"
-                >
-                  <GraduationCap className="size-4" />
-                  <span>{t("Ir para o Meu Portal do Estudante")}</span>
-                  <ArrowRight className="size-3.5" />
-                </button>
-                <button
-                  onClick={logout}
-                  className="rounded-sm border border-border px-4 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition cursor-pointer"
-                >
-                  {t("Encerrar Sessão (Sair)")}
-                </button>
-              </div>
-            </div>
-          </Panel>
+        {/* WORKER PORTAL VIEW */}
+        {activePortal === "worker" ? (
+          <AdvancedWorkerLoginForm
+            onSuccess={() => {
+              navigate("/painel-funcionario");
+            }}
+          />
         ) : (
-          <div className="grid gap-8 lg:grid-cols-12 items-start">
+          /* STUDENT PORTAL VIEW */
+          <div className="space-y-6">
+            {/* MongoDB Status Banner */}
+            <div className="flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 p-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Database className="size-4 text-primary shrink-0" />
+                <div>
+                  <span className="font-bold text-foreground">Base de Dados MongoDB Backend: </span>
+                  {dbStatus?.isConnected ? (
+                    <span className="text-emerald-500 font-semibold inline-flex items-center gap-1">
+                      <CheckCircle2 className="size-3.5 inline" /> Ligado ({dbStatus.databaseName || "unileonardo_db"}) · {dbStatus.collections?.users || 0} Estudantes Registados
+                    </span>
+                  ) : (
+                    <span className="text-amber-500 font-semibold inline-flex items-center gap-1">
+                      <AlertCircle className="size-3.5 inline" /> Modo Local Fallback (MongoDB a aguardar string MONGODB_URI)
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  fetch("/api/db/status").then((r) => r.json()).then(setDbStatus);
+                }}
+                className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <RefreshCw className="size-3" />
+                <span>Atualizar Status</span>
+              </button>
+            </div>
+
+            {user ? (
+              <Panel titulo={t("Sessão Activa")}>
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center gap-4 rounded-md border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex size-12 items-center justify-center rounded-full bg-primary font-display font-bold text-lg text-primary-foreground">
+                      {user.nome.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-foreground text-base leading-tight">
+                          {user.nome}
+                        </p>
+                        {user.isInternational && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 border border-accent/40 px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
+                            <Globe className="size-3" />
+                            {t("Internacional")}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {user.id} · {user.curso} ({user.ano}º Ano) · {user.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => navigate("/portal")}
+                      className="inline-flex items-center gap-2 rounded-sm bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition cursor-pointer"
+                    >
+                      <GraduationCap className="size-4" />
+                      <span>{t("Ir para o Meu Portal do Estudante")}</span>
+                      <ArrowRight className="size-3.5" />
+                    </button>
+                    <button
+                      onClick={logout}
+                      className="rounded-sm border border-border px-4 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition cursor-pointer"
+                    >
+                      {t("Encerrar Sessão (Sair)")}
+                    </button>
+                  </div>
+                </div>
+              </Panel>
+            ) : (
+              <div className="grid gap-8 lg:grid-cols-12 items-start">
             {/* Form Box */}
             <div className="lg:col-span-7">
               <Panel
@@ -305,14 +376,35 @@ export function Login() {
                       </div>
                     </div>
 
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition shadow-xs cursor-pointer disabled:opacity-50"
-                    >
-                      {loading ? <RefreshCw className="size-4 animate-spin" /> : <LogIn className="size-4" />}
-                      <span>{t("Entrar no Portal do Estudante")}</span>
-                    </button>
+                    <div className="space-y-2 pt-1">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        {loading ? <RefreshCw className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+                        <span>{t("Entrar com Senha de Estudante")}</span>
+                      </button>
+
+                      {/* Biometric Instant Login Option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // If identifier matches an existing student ID or email, pre-select it
+                          const matched = students.find(
+                            (s) =>
+                              s.id.toLowerCase() === identifier.trim().toLowerCase() ||
+                              s.email.toLowerCase() === identifier.trim().toLowerCase()
+                          );
+                          setTargetBioStudentId(matched ? matched.id : "EST-2024-001");
+                          setBiometricModalOpen(true);
+                        }}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-300 transition shadow-xs cursor-pointer group"
+                      >
+                        <Fingerprint className="size-4 text-emerald-500 group-hover:scale-110 transition" />
+                        <span>{t("Entrar com Biometria (Touch ID / Face ID / Passkey)")}</span>
+                      </button>
+                    </div>
 
                     {/* Web3 / Base Sign in divider & buttons */}
                     <div className="relative my-4 text-center">
@@ -495,35 +587,71 @@ export function Login() {
                 </p>
 
                 <div className="space-y-2">
-                  <button
-                    onClick={() => handleDemoSelect("EST-2024-001")}
-                    className="w-full flex items-center justify-between rounded-sm border border-border bg-card p-3 text-left hover:border-primary transition group cursor-pointer"
-                  >
-                    <div>
-                      <p className="font-bold text-xs text-foreground group-hover:text-primary">
-                        Leonardo Nhantumbo
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        EST-2024-001 · Eng. Informática (Nacional)
-                      </p>
-                    </div>
-                    <UserCheck className="size-4 text-muted-foreground group-hover:text-primary shrink-0" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDemoSelect("EST-2024-001")}
+                      className="flex-1 flex items-center justify-between rounded-xl border border-border bg-card p-3 text-left hover:border-primary transition group cursor-pointer"
+                    >
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-xs text-foreground group-hover:text-primary">
+                            Leonardo Nhantumbo
+                          </p>
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            Touch ID
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          EST-2024-001 · Eng. Informática
+                        </p>
+                      </div>
+                      <UserCheck className="size-4 text-muted-foreground group-hover:text-primary shrink-0" />
+                    </button>
+                    <button
+                      type="button"
+                      title={t("Testar Verificação Biométrica")}
+                      onClick={() => {
+                        setTargetBioStudentId("EST-2024-001");
+                        setBiometricModalOpen(true);
+                      }}
+                      className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition cursor-pointer shrink-0"
+                    >
+                      <Fingerprint className="size-5" />
+                    </button>
+                  </div>
 
-                  <button
-                    onClick={() => handleDemoSelect("EST-2024-002")}
-                    className="w-full flex items-center justify-between rounded-sm border border-border bg-card p-3 text-left hover:border-primary transition group cursor-pointer"
-                  >
-                    <div>
-                      <p className="font-bold text-xs text-foreground group-hover:text-primary">
-                        Amina Abdala
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        EST-2024-002 · Medicina Geral
-                      </p>
-                    </div>
-                    <UserCheck className="size-4 text-muted-foreground group-hover:text-primary shrink-0" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDemoSelect("EST-2024-002")}
+                      className="flex-1 flex items-center justify-between rounded-xl border border-border bg-card p-3 text-left hover:border-primary transition group cursor-pointer"
+                    >
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-xs text-foreground group-hover:text-primary">
+                            Amina Abdala
+                          </p>
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                            Face ID
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          EST-2024-002 · Medicina Geral
+                        </p>
+                      </div>
+                      <UserCheck className="size-4 text-muted-foreground group-hover:text-primary shrink-0" />
+                    </button>
+                    <button
+                      type="button"
+                      title={t("Testar Verificação Biométrica Facial")}
+                      onClick={() => {
+                        setTargetBioStudentId("EST-2024-002");
+                        setBiometricModalOpen(true);
+                      }}
+                      className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition cursor-pointer shrink-0"
+                    >
+                      <ScanFace className="size-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -538,12 +666,20 @@ export function Login() {
               </div>
             </div>
           </div>
+            )}
+          </div>
         )}
       </div>
 
       <ForgotPasswordModal
         isOpen={resetModalOpen}
         onClose={() => setResetModalOpen(false)}
+      />
+
+      <BiometricVerificationModal
+        isOpen={biometricModalOpen}
+        onClose={() => setBiometricModalOpen(false)}
+        targetStudentId={targetBioStudentId}
       />
     </Shell>
   );

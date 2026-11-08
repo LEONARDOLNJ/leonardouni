@@ -6,6 +6,9 @@ import { dataPt, mzn, type Payment } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
 import { ReceiptPreviewModal } from "@/components/ReceiptPreviewModal";
 import { ReceiptVerificationModal } from "@/components/ReceiptVerificationModal";
+import { QRCodeModal } from "@/components/QRCodeModal";
+import { SecretaryPushDispatcherModal } from "@/components/SecretaryPushDispatcherModal";
+import { useRouter } from "@/lib/router";
 import studentSupportImg from "@/assets/images/student_support_1786439415676.jpg";
 import {
   Search,
@@ -21,10 +24,15 @@ import {
   User,
   ArrowUpDown,
   Building2,
+  QrCode,
+  Camera,
+  Bell,
+  BellRing,
 } from "lucide-react";
 
 export function Recibos() {
   const { t } = useI18n();
+  const { navigate } = useRouter();
   const { payments, students, fees } = useUniStore();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +40,10 @@ export function Recibos() {
   const [previewPayment, setPreviewPayment] = useState<Payment | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState<string>("");
+  const [qrModalDoc, setQrModalDoc] = useState<any | null>(null);
+  const [showPushModal, setShowPushModal] = useState(false);
+  const [pushStudentId, setPushStudentId] = useState<string | undefined>(undefined);
+  const [pushReceiptNo, setPushReceiptNo] = useState<string | undefined>(undefined);
 
   const emitidos = useMemo(() => {
     return payments.filter((p) => p.estado === "pago");
@@ -218,6 +230,16 @@ export function Recibos() {
             ))}
           </div>
 
+          {/* QR Scanner & Verifier Quick Launcher */}
+          <button
+            onClick={() => navigate("/verificar")}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+            title={t("Scanner & Validador de QR Code")}
+          >
+            <QrCode className="size-3.5" />
+            <span>{t("Scanner & Validador QR")}</span>
+          </button>
+
           {/* Export CSV Button */}
           <button
             onClick={exportToCSV}
@@ -285,6 +307,28 @@ export function Recibos() {
                           <Eye className="size-3.5" />
                         </button>
 
+                        {/* View QR Code Modal */}
+                        <button
+                          onClick={() => {
+                            setQrModalDoc({
+                              code: receiptNum,
+                              title: `Recibo de Pagamento ${receiptNum}`,
+                              type: "RECIBO",
+                              studentId: p.studentId,
+                              studentName: student?.nome,
+                              course: student?.curso,
+                              amount: p.valorPago,
+                              date: p.data,
+                              status: p.estado,
+                              onDownloadPdf: () => downloadReceipt(p),
+                            });
+                          }}
+                          className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition cursor-pointer"
+                          title={t("Gerar & Ver QR Code de Autenticidade")}
+                        >
+                          <QrCode className="size-3.5" />
+                        </button>
+
                         {/* Verify Authenticity */}
                         <button
                           onClick={() => {
@@ -297,10 +341,24 @@ export function Recibos() {
                           <ShieldCheck className="size-3.5" />
                         </button>
 
-                        {/* Download PDF */}
+                        {/* Push Notification Alert to Student */}
+                        <button
+                          onClick={() => {
+                            setPushStudentId(p.studentId);
+                            setPushReceiptNo(receiptNum);
+                            setShowPushModal(true);
+                          }}
+                          className="p-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 transition cursor-pointer"
+                          title={t("Notificar Aluno via Push (Service Worker)")}
+                        >
+                          <Bell className="size-3.5" />
+                        </button>
+
+                        {/* Download PDF with embedded QR Code */}
                         <button
                           onClick={() => downloadReceipt(p)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:bg-primary/90 cursor-pointer shadow-xs"
+                          title={t("Descarregar PDF com QR Code")}
                         >
                           <Download className="size-3.5" />
                           <span>PDF</span>
@@ -326,11 +384,31 @@ export function Recibos() {
         />
       )}
 
+      {/* Interactive Modal: QR Code Preview */}
+      {qrModalDoc && (
+        <QRCodeModal
+          isOpen={!!qrModalDoc}
+          documentData={qrModalDoc}
+          onClose={() => setQrModalDoc(null)}
+        />
+      )}
+
       {/* Interactive Modal: Receipt Verification */}
       {isVerifying && (
         <ReceiptVerificationModal
           initialCode={verificationCode}
           onClose={() => setIsVerifying(false)}
+        />
+      )}
+
+      {/* Push Notification Dispatcher Modal */}
+      {showPushModal && (
+        <SecretaryPushDispatcherModal
+          isOpen={showPushModal}
+          onClose={() => setShowPushModal(false)}
+          defaultCategory="new_receipt"
+          defaultStudentId={pushStudentId}
+          defaultReceiptNo={pushReceiptNo}
         />
       )}
     </Shell>

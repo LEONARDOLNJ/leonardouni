@@ -4,8 +4,10 @@ import { dataPt, fees, mzn, type Fee } from "@/lib/uni-data";
 import { useI18n } from "@/lib/i18n";
 import { FeeCalculator } from "@/components/FeeCalculator";
 import { MobileMoneyRefModal } from "@/components/MobileMoneyRefModal";
+import { PushNotificationBanner } from "@/components/PushNotificationBanner";
+import { dispatchPushNotification } from "@/lib/push-notifications";
 import financeImg from "@/assets/images/financial_services_1786439400478.jpg";
-import { Smartphone, ArrowRight } from "lucide-react";
+import { Smartphone, ArrowRight, Bell } from "lucide-react";
 
 function Tabela({
   titulo,
@@ -17,6 +19,19 @@ function Tabela({
   onGenerateRef: (f: Fee) => void;
 }) {
   const { t } = useI18n();
+
+  const handleNotifyDeadline = (f: Fee) => {
+    dispatchPushNotification({
+      title: `⏰ Lembrete de Vencimento: ${f.designacao}`,
+      body: `A taxa/propina de ${mzn(f.valor)} (${f.curso}) tem vencimento programado para ${dataPt(f.vencimento)}. Evite multas de mora.`,
+      category: "fee_deadline",
+      feeName: f.designacao,
+      amount: f.valor,
+      dueDate: f.vencimento,
+      url: "/propinas",
+    });
+  };
+
   return (
     <Panel titulo={`${t(titulo)} · ${lista.length} ${t("registos")}`}>
       <div className="overflow-x-auto">
@@ -28,7 +43,7 @@ function Tabela({
               <th className="px-5 py-2.5 font-medium">{t("Abrangência")}</th>
               <th className="px-5 py-2.5 font-medium">{t("Vencimento")}</th>
               <th className="px-5 py-2.5 text-right font-medium">{t("Valor")}</th>
-              <th className="px-5 py-2.5 text-right font-medium">{t("Referência")}</th>
+              <th className="px-5 py-2.5 text-right font-medium">{t("Ações")}</th>
             </tr>
           </thead>
           <tbody>
@@ -40,13 +55,22 @@ function Tabela({
                 <td className="px-5 py-3 text-muted-foreground">{dataPt(f.vencimento)}</td>
                 <td className="px-5 py-3 text-right font-bold text-foreground">{mzn(f.valor)}</td>
                 <td className="px-5 py-3 text-right">
-                  <button
-                    onClick={() => onGenerateRef(f)}
-                    className="inline-flex items-center gap-1 rounded-sm border border-border px-2.5 py-1 text-xs font-medium text-foreground transition hover:border-primary hover:text-primary hover:bg-primary/5"
-                  >
-                    <Smartphone className="size-3 text-primary" />
-                    <span>M-Pesa</span>
-                  </button>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      onClick={() => handleNotifyDeadline(f)}
+                      title={t("Testar envio de notificação push de vencimento desta propina")}
+                      className="p-1.5 rounded-lg border border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-xs transition cursor-pointer"
+                    >
+                      <Bell className="size-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onGenerateRef(f)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition hover:border-primary hover:text-primary hover:bg-primary/5 cursor-pointer"
+                    >
+                      <Smartphone className="size-3 text-primary" />
+                      <span>M-Pesa</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -74,10 +98,13 @@ export function Propinas() {
       imagem={financeImg}
     >
       <div className="space-y-6">
+        {/* Service Worker Push Notification Banner */}
+        <PushNotificationBanner />
+
         {/* Mobile Money Callout Banner */}
-        <div className="rounded-sm border border-primary/20 bg-card p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="rounded-2xl border border-primary/20 bg-card p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-accent/20 text-accent-foreground shrink-0">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-accent/20 text-accent-foreground shrink-0">
               <Smartphone className="size-5" />
             </div>
             <div>
@@ -91,7 +118,7 @@ export function Propinas() {
           </div>
           <button
             onClick={() => handleOpenRef()}
-            className="inline-flex items-center gap-2 rounded-sm bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition shrink-0"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition shrink-0 cursor-pointer"
           >
             <span>{t("Gerar Referência USSD")}</span>
             <ArrowRight className="size-3.5" />
@@ -125,4 +152,5 @@ export function Propinas() {
     </Shell>
   );
 }
+
 

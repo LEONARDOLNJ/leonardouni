@@ -4,11 +4,14 @@ import { UNIVERSITY } from "@/lib/uni-data";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
+import { useRole } from "@/lib/role";
+import { RoleSwitcherBadge } from "@/components/RoleSwitcherBadge";
 import { UniversityLogo } from "@/components/UniversityLogo";
 import { Web3AuthButtons } from "@/components/Web3AuthButtons";
 import { SignInWithBaseButton } from "@/components/SignInWithBaseButton";
 import { AIVoiceAssistant } from "@/components/AIVoiceAssistant";
-import { AIChatbot } from "@/components/AIChatbot";
+import { DarkModePaletteSelector } from "@/components/DarkModePaletteSelector";
+import { PushNotificationCenter } from "@/components/PushNotificationCenter";
 import {
   Sun,
   Moon,
@@ -24,21 +27,32 @@ import {
   ChevronRight,
   Zap,
   CreditCard,
+  Briefcase,
+  QrCode,
 } from "lucide-react";
 import heroDefault from "@/assets/campus-hero.jpg";
 
-const NAV = [
-  { to: "/", label: "Painel" },
-  { to: "/analytics", label: "Analytics GPA" },
-  { to: "/hub", label: "Hub & Certificados" },
-  { to: "/orientador", label: "Orientador IA" },
-  { to: "/subscricoes", label: "Subscrições" },
-  { to: "/estudantes", label: "Estudantes" },
-  { to: "/propinas", label: "Propinas & Taxas" },
-  { to: "/pagamentos", label: "Pagamentos" },
-  { to: "/recibos", label: "Recibos" },
-  { to: "/documentos", label: "Documentos" },
-] as const;
+interface NavItem {
+  to: string;
+  label: string;
+  role?: "worker" | "student" | "all";
+  badge?: string;
+}
+
+const ALL_NAV_ITEMS: NavItem[] = [
+  { to: "/", label: "Painel", role: "all" },
+  { to: "/painel-funcionario", label: "Secretaria Financeira", role: "worker", badge: "Secretário" },
+  { to: "/analytics", label: "Analytics GPA", role: "all" },
+  { to: "/hub", label: "Hub & Certificados", role: "all" },
+  { to: "/orientador", label: "Orientador IA", role: "student" },
+  { to: "/subscricoes", label: "Subscrições", role: "student" },
+  { to: "/estudantes", label: "Estudantes", role: "all" },
+  { to: "/propinas", label: "Propinas & Taxas", role: "all" },
+  { to: "/pagamentos", label: "Pagamentos", role: "all" },
+  { to: "/recibos", label: "Recibos", role: "all" },
+  { to: "/documentos", label: "Documentos", role: "all" },
+  { to: "/verificar", label: "Validar QR", role: "all", badge: "Scanner" },
+];
 
 export function Shell({
   titulo,
@@ -54,14 +68,26 @@ export function Shell({
   const { t, lang, setLang } = useI18n();
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const { isWorker, isStudent } = useRole();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const visibleNavItems = ALL_NAV_ITEMS.filter((item) => {
+    if (!item.role || item.role === "all") return true;
+    if (item.role === "worker") return isWorker;
+    if (item.role === "student") return isStudent;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors selection:bg-primary/20 flex flex-col font-sans">
       {/* Top Academic Utility Bar */}
       <div className="bg-primary text-primary-foreground border-b border-white/10 shadow-xs relative z-50">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-2 text-xs">
-          <div className="flex items-center gap-4 text-[11px] font-medium opacity-90">
+          <div className="flex items-center gap-3 text-[11px] font-medium opacity-90">
+            {/* Role Switcher in Top Bar */}
+            <RoleSwitcherBadge variant="header" />
+
+            <span className="hidden sm:inline text-white/40">|</span>
             <Link
               to="/portal"
               className="hover:opacity-100 transition flex items-center gap-1.5 font-semibold text-accent-foreground bg-white/10 hover:bg-white/15 px-2.5 py-1 rounded-full border border-white/15 backdrop-blur-xs"
@@ -70,9 +96,20 @@ export function Shell({
               <span>{t("Portal do Estudante")}</span>
             </Link>
             <span className="hidden sm:inline text-white/40">|</span>
-            <span className="hidden md:inline hover:text-white transition cursor-pointer">
-              {t("Apoio financeiro & Propinas")}
-            </span>
+            {isWorker && (
+              <Link
+                to="/painel-funcionario"
+                className="hidden md:inline-flex items-center gap-1 text-amber-300 font-bold hover:underline"
+              >
+                <Briefcase className="size-3" />
+                <span>{t("Administração")}</span>
+              </Link>
+            )}
+            {!isWorker && (
+              <span className="hidden md:inline hover:text-white transition cursor-pointer">
+                {t("Apoio financeiro & Propinas")}
+              </span>
+            )}
             <span className="hidden md:inline text-white/40">|</span>
             <span className="hidden lg:inline text-emerald-300 flex items-center gap-1">
               <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -100,6 +137,9 @@ export function Shell({
               )}
             </button>
 
+            {/* Dark Mode Palette Customizer Dropdown (shown when in dark mode or for custom palette selection) */}
+            <DarkModePaletteSelector variant="header-dropdown" />
+
             {/* Language Selector */}
             <div className="flex items-center gap-0.5 bg-white/10 rounded-full p-0.5 border border-white/10">
               <Globe className="size-3 opacity-70 ml-1.5 mr-0.5" />
@@ -121,6 +161,9 @@ export function Shell({
 
             {/* AI Voice Command Assistant */}
             <AIVoiceAssistant variant="header" />
+
+            {/* Service Worker Push Notification Center */}
+            <PushNotificationCenter variant="header" />
 
             {/* Auth Profile / Login & Sign in with Base */}
             <div className="flex items-center gap-2 border-l border-white/20 pl-2.5">
@@ -191,15 +234,22 @@ export function Shell({
 
           {/* Desktop Navigation */}
           <nav className="hidden xl:flex items-center gap-1 text-xs font-medium">
-            {NAV.map((n) => (
+            {visibleNavItems.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
                 exact={n.to === "/"}
-                className="rounded-lg px-2.5 py-2 text-muted-foreground transition hover:bg-muted/80 hover:text-foreground font-semibold text-[12px]"
+                className={`rounded-lg px-2.5 py-2 text-muted-foreground transition hover:bg-muted/80 hover:text-foreground font-semibold text-[12px] flex items-center gap-1.5 ${
+                  n.badge ? "text-amber-600 dark:text-amber-400 font-bold" : ""
+                }`}
                 activeClassName="bg-primary/10 text-primary font-bold shadow-2xs"
               >
-                {t(n.label)}
+                <span>{t(n.label)}</span>
+                {n.badge && (
+                  <span className="px-1.5 py-0.2 text-[9px] font-extrabold uppercase rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    {n.badge}
+                  </span>
+                )}
               </Link>
             ))}
             <Link
@@ -236,7 +286,7 @@ export function Shell({
         {mobileMenuOpen && (
           <div className="xl:hidden border-t border-border bg-card p-4 space-y-1 shadow-lg animate-in slide-in-from-top-2 duration-150">
             <div className="grid grid-cols-2 gap-1.5 pb-3 border-b border-border">
-              {NAV.map((n) => (
+              {visibleNavItems.map((n) => (
                 <Link
                   key={n.to}
                   to={n.to}
@@ -355,9 +405,6 @@ export function Shell({
           © {new Date().getFullYear()} {UNIVERSITY.nome} · {t("Todos os direitos reservados.")}
         </div>
       </footer>
-
-      {/* Persistent Global AI Chatbot */}
-      <AIChatbot />
     </div>
   );
 }
